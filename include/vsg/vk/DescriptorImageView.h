@@ -12,27 +12,36 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/nodes/Node.h>
-#include <vsg/viewer/Camera.h>
+#include <vsg/vk/Descriptor.h>
+#include <vsg/vk/ImageData.h>
 
 namespace vsg
 {
-    class View : public Inherit<Object, View>
+
+    class VSG_DECLSPEC DescriptorImageView : public Inherit<Descriptor, DescriptorImageView>
     {
     public:
-        View();
+        DescriptorImageView();
 
-        /// set the master Camera of the View
-        void setCamera(ref_ptr<Camera> camera);
-        Camera* getCamera() { return _camera; }
-        const Camera* getCamera() const { return _camera; }
+        DescriptorImageView(ImageData imageData, uint32_t dstBinding = 0, uint32_t dstArrayElement = 0, VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-        void setScene(ref_ptr<Node> scene) { _scene = scene; }
-        Node* getScene() { return _scene; }
-        Node* getScene() const { return _scene; }
+        /** ImageDataList is automatically filled in by the DecriptorImage::compile() using the sampler and image data objects.*/
+        ImageDataList& getImageDataList() { return _imageDataList; }
+        const ImageDataList& getImageDataList() const { return _imageDataList; }
+
+        void read(Input& input) override;
+        void write(Output& output) const override;
+
+        void compile(Context& context) override;
+
+        void assignTo(Context& context, VkWriteDescriptorSet& wds) const override;
+
+        uint32_t getNumDescriptors() const override;
 
     protected:
-        ref_ptr<Camera> _camera;
-        ref_ptr<Node> _scene;
+        ImageDataList _imageDataList;
+        bool _compiled;
     };
+    VSG_type_name(vsg::DescriptorImageView);
+
 } // namespace vsg

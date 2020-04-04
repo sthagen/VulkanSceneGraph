@@ -22,19 +22,24 @@ namespace vsg
     class Dispatch : public Inherit<Command, Dispatch>
     {
     public:
+        Dispatch() {}
+
         Dispatch(uint32_t in_groupCountX, uint32_t in_groupCountY, uint32_t in_groupCountZ) :
             groupCountX(in_groupCountX),
             groupCountY(in_groupCountY),
             groupCountZ(in_groupCountZ) {}
+
+        void read(Input& input) override;
+        void write(Output& output) const override;
 
         void dispatch(CommandBuffer& commandBuffer) const override
         {
             vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
         }
 
-        uint32_t groupCountX;
-        uint32_t groupCountY;
-        uint32_t groupCountZ;
+        uint32_t groupCountX = 0;
+        uint32_t groupCountY = 0;
+        uint32_t groupCountZ = 0;
     };
     VSG_type_name(vsg::Dispatch);
 

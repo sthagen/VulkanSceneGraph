@@ -10,49 +10,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/vk/CommandBuffer.h>
-#include <vsg/vk/PushConstants.h>
+#include <vsg/vk/Dispatch.h>
 
 using namespace vsg;
 
-PushConstants::PushConstants() :
-    Inherit(2), // slot 0
-    _stageFlags(0),
-    _offset(0)
+void Dispatch::read(Input& input)
 {
+    Command::read(input);
+
+    input.read("groupCountX", groupCountX);
+    input.read("groupCountY",groupCountY );
+    input.read("groupCountZ", groupCountZ);
 }
 
-PushConstants::PushConstants(VkShaderStageFlags stageFlags, uint32_t offset, Data* data) :
-    Inherit(2), // slot 0
-    _stageFlags(stageFlags),
-    _offset(offset),
-    _data(data)
+void Dispatch::write(Output& output) const
 {
-}
+    Command::write(output);
 
-PushConstants::~PushConstants()
-{
-}
-
-void PushConstants::read(Input& input)
-{
-    StateCommand::read(input);
-
-    _stageFlags = input.readValue<uint32_t>("stageFlags");
-    input.read("offset", _offset);
-    _data = input.readObject<Data>("data");
-}
-
-void PushConstants::write(Output& output) const
-{
-    StateCommand::write(output);
-
-    output.writeValue<uint32_t>("stageFlags", _stageFlags);
-    output.write("offset", _offset);
-    output.writeObject("data", _data.get());
-}
-
-void PushConstants::dispatch(CommandBuffer& commandBuffer) const
-{
-    vkCmdPushConstants(commandBuffer, commandBuffer.getCurrentPipelineLayout(), _stageFlags, _offset, static_cast<uint32_t>(_data->dataSize()), _data->dataPointer());
+    output.write("groupCountX", groupCountX);
+    output.write("groupCountY", groupCountY);
+    output.write("groupCountZ", groupCountZ);
 }

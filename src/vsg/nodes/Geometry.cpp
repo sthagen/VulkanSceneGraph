@@ -10,19 +10,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/vk/BindIndexBuffer.h>
-#include <vsg/vk/BindVertexBuffers.h>
-#include <vsg/vk/BufferData.h>
-#include <vsg/vk/Descriptor.h>
-#include <vsg/vk/DescriptorPool.h>
-#include <vsg/vk/DescriptorSet.h>
-#include <vsg/vk/Draw.h>
-
+#include <vsg/commands/BindIndexBuffer.h>
 #include <vsg/io/ReaderWriter.h>
-
-#include <vsg/traversals/RecordTraversal.h>
-
 #include <vsg/nodes/Geometry.h>
+#include <vsg/traversals/RecordTraversal.h>
 
 using namespace vsg;
 
@@ -50,15 +41,15 @@ void Geometry::read(Input& input)
     arrays.resize(input.readValue<uint32_t>("NumArrays"));
     for (auto& array : arrays)
     {
-        array = input.readObject<Data>("Array");
+        input.readObject("Array", array);
     }
 
-    indices = input.readObject<Data>("Indices");
+    input.readObject("Indices", indices);
 
     commands.resize(input.readValue<uint32_t>("NumCommands"));
     for (auto& command : commands)
     {
-        command = input.readObject<Command>("Command");
+        input.readObject("Command", command);
     }
 }
 

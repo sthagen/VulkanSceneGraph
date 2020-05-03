@@ -10,12 +10,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/state/Descriptor.h>
+#include <vsg/state/StateGroup.h>
 #include <vsg/traversals/CompileTraversal.h>
-
-#include <vsg/nodes/StateGroup.h>
-
-#include <vsg/vk/Descriptor.h>
-
 #include <vsg/viewer/Viewer.h>
 
 #include <chrono>
@@ -333,7 +330,7 @@ void Viewer::assignRecordAndSubmitTaskAndPresentation(CommandGraphs in_commandGr
             std::set<Window*> uniqueWindows;
             for (auto& commanGraph : commandGraphs)
             {
-                uniqueWindows.insert(commanGraph->windows.begin(), commanGraph->windows.end());
+                uniqueWindows.insert(commanGraph->window);
             }
 
             Windows windows(uniqueWindows.begin(), uniqueWindows.end());
@@ -341,7 +338,7 @@ void Viewer::assignRecordAndSubmitTaskAndPresentation(CommandGraphs in_commandGr
             auto renderFinishedSemaphore = vsg::Semaphore::create(device);
 
             // set up Submission with CommandBuffer and signals
-            auto recordAndSubmitTask = vsg::RecordAndSubmitTask::create();
+            auto recordAndSubmitTask = vsg::RecordAndSubmitTask::create(device);
             recordAndSubmitTask->commandGraphs = commandGraphs;
             recordAndSubmitTask->signalSemaphores.emplace_back(renderFinishedSemaphore);
             recordAndSubmitTask->databasePager = databasePager;
@@ -359,7 +356,7 @@ void Viewer::assignRecordAndSubmitTaskAndPresentation(CommandGraphs in_commandGr
         {
             // with don't have a presentFamily so this set of commandGraphs aren't associated with a widnow
             // set up Submission with CommandBuffer and signals
-            auto recordAndSubmitTask = vsg::RecordAndSubmitTask::create();
+            auto recordAndSubmitTask = vsg::RecordAndSubmitTask::create(device);
             recordAndSubmitTask->commandGraphs = commandGraphs;
             recordAndSubmitTask->databasePager = databasePager;
             recordAndSubmitTask->queue = device->getQueue(deviceQueueFamily.queueFamily);
@@ -381,6 +378,32 @@ void Viewer::update()
 
 void Viewer::recordAndSubmit()
 {
+    // TODO:Multi-threading approach notes:
+    //
+    //   CommandGraph "has a" std::thread  (CG_Thread)
+    //   CommandGraph "has a" vsg::Affinity? Used when configuring the CG_Thread
+    //
+    //   CG_Thread "has a" RecordTraversalStartBarrier (vsg::Latch?) could be shared?
+    //   CG Thread "has a RecordTraverasl to record command graph
+    //   CG_Thread "has a shared" ReordTraversalFinishiedBarrier
+    //
+    //   RecordTraveraslBarrier is joined by N CG_Thread's and passed the commandbuffers to submit
+    //   One per RecordAndSubmitTask
+    //   Once all the associated CG_Threads have joined the RecordTraveraslBarrier it's released and the VkSubmit occurs
+    //   Then the RecordTraveraslBarrier joins a SubmitFinsihedBarrier
+    //
+    //   SubmitFinsihedBarrier is joined by M RecordTraveraslBarrier's after they have submitted there work
+    //   Main thread can wait on SubmitFinsihedBarrier within recordAndSubmit or optionally by the application in it's main loop,
+    //   or at latest at the start of the recordAndSubmit().
+    //
+    //
+    //      Need to create a set of multi-threading test cases to develop for:
+    //          Multi-gpu
+    //          Multi-pass
+    //          Mulit-window/viewport
+    //          Compute and Graphics
+    //          All of the above with DatabasePaging
+
     for (auto& recordAndSubmitTask : recordAndSubmitTasks)
     {
         recordAndSubmitTask->submit(_frameStamp);

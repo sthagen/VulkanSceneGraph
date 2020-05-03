@@ -12,9 +12,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/ScratchMemory.h>
+#include <vsg/state/ComputePipeline.h>
+#include <vsg/state/GraphicsPipeline.h>
 #include <vsg/vk/CommandPool.h>
-#include <vsg/vk/ComputePipeline.h>
-#include <vsg/vk/GraphicsPipeline.h>
 
 namespace vsg
 {
@@ -45,6 +46,8 @@ namespace vsg
 
         void setCurrentPipelineLayout(VkPipelineLayout pipelineLayout) { _currentPipelineLayout = pipelineLayout; }
         VkPipelineLayout getCurrentPipelineLayout() const { return _currentPipelineLayout; }
+
+        ref_ptr<ScratchMemory> scratchMemory;
 
     protected:
         virtual ~CommandBuffer();

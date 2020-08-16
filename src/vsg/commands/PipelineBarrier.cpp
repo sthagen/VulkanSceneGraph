@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #include <vsg/commands/PipelineBarrier.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/CommandBuffer.h>
 
 using namespace vsg;
@@ -92,7 +93,7 @@ PipelineBarrier::~PipelineBarrier()
 {
 }
 
-void PipelineBarrier::dispatch(CommandBuffer& commandBuffer) const
+void PipelineBarrier::record(CommandBuffer& commandBuffer) const
 {
     auto& scratchMemory = *(commandBuffer.scratchMemory);
 

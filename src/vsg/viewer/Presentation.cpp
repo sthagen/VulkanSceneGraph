@@ -10,6 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
 #include <vsg/viewer/Presentation.h>
 
 using namespace vsg;
@@ -32,9 +33,18 @@ VkResult Presentation::present()
     std::vector<uint32_t> indices;
     for (auto& window : windows)
     {
-        //vk_semaphores.push_back(*(window->frame(window->nextImageIndex()).imageAvailableSemaphore));
-        vk_swapchains.emplace_back(*(window->swapchain()));
-        indices.emplace_back(window->nextImageIndex());
+        size_t imageIndex = window->imageIndex();
+        if (window->visible() && imageIndex < window->numFrames())
+        {
+            vk_swapchains.emplace_back(*(window->getOrCreateSwapchain()));
+            indices.emplace_back(static_cast<uint32_t>(imageIndex));
+        }
+    }
+
+    if (vk_swapchains.empty())
+    {
+        // nothing to present so return early
+        return VK_SUCCESS;
     }
 
     VkPresentInfoKHR presentInfo = {};
@@ -60,11 +70,6 @@ VkResult Presentation::present()
     }
     std::cout << std::endl;
 #endif
-
-    for (auto& window : windows)
-    {
-        window->advanceNextImageIndex();
-    }
 
     return queue->present(presentInfo);
 }

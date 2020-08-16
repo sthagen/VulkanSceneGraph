@@ -11,14 +11,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 
+#include <vsg/core/Exception.h>
 #include <vsg/ui/ApplicationEvent.h>
 #include <vsg/ui/PointerEvent.h>
+#include <vsg/ui/ScrollWheelEvent.h>
 #include <vsg/vk/Extensions.h>
 #include <vsg/platform/unix/Xcb_Window.h>
 
 #include <xcb/xproto.h>
-
-#include <vulkan/vulkan_xcb.h>
 
 #include <chrono>
 #include <iostream>
@@ -28,23 +28,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace vsg
 {
     // Provide the Window::create(...) implementation that automatically maps to a Xcb_Window
-    Window::Result Window::create(vsg::ref_ptr<WindowTraits> traits)
+    ref_ptr<Window> Window::create(vsg::ref_ptr<WindowTraits> traits)
     {
         return vsgXcb::Xcb_Window::create(traits);
-    }
-
-    vsg::Names Window::getInstanceExtensions()
-    {
-        // check the extensions are avaliable first
-        Names requiredExtensions = {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME};
-
-        if (!vsg::isExtensionListSupported(requiredExtensions))
-        {
-            std::cout << "Error: vsg::getInstanceExtensions(...) unable to create window, VK_KHR_SURFACE_EXTENSION_NAME or VK_KHR_XCB_SURFACE_EXTENSION_NAME not supported." << std::endl;
-            return Names();
-        }
-
-        return requiredExtensions;
     }
 } // namespace vsg
 
@@ -89,7 +75,7 @@ namespace vsgXcb
             return hints;
         }
 
-        static MotifHints window(bool resize=true, bool move=true, bool close=true)
+        static MotifHints window(bool resize=true, bool move=true, bool close=true, bool minimize=true)
         {
             MotifHints hints;
             hints.flags = FLAGS_DECORATIONS | FLAGS_FUNCTIONS;
@@ -97,10 +83,10 @@ namespace vsgXcb
             if (resize) hints.functions |= FUNC_RESIZE;
             if (move) hints.functions |= FUNC_MOVE;
             if (close) hints.functions |= FUNC_CLOSE;
+            if (minimize) hints.functions |= FUNC_MINIMUMSIZE;
             hints.decorations = DECOR_ALL;
             return hints;
         }
-
 
         uint32_t flags{};
         uint32_t functions{};
@@ -231,36 +217,23 @@ void KeyboardMap::add(uint16_t keycode, std::initializer_list<std::pair<uint16_t
 //
 // Xcb_Surface
 //
-Xcb_Surface::Xcb_Surface(vsg::Instance* instance, xcb_connection_t* connection, xcb_window_t window, vsg::AllocationCallbacks* allocator) :
-    vsg::Surface(VK_NULL_HANDLE, instance, allocator)
+Xcb_Surface::Xcb_Surface(vsg::Instance* instance, xcb_connection_t* connection, xcb_window_t window) :
+    vsg::Surface(VK_NULL_HANDLE, instance)
 {
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.connection = connection;
     surfaceCreateInfo.window = window;
 
-    /*VkResult result =*/vkCreateXcbSurfaceKHR(*instance, &surfaceCreateInfo, nullptr, &_surface);
+    /*VkResult result =*/vkCreateXcbSurfaceKHR(*instance, &surfaceCreateInfo, _instance->getAllocationCallbacks(), &_surface);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //
 // Xcb_Window
 //
-vsg::Window::Result Xcb_Window::create(vsg::ref_ptr<WindowTraits> traits, vsg::AllocationCallbacks* allocator)
-{
-    try
-    {
-        ref_ptr<Window> window(new Xcb_Window(traits,  allocator));
-        return Result(window);
-    }
-    catch (vsg::Window::Result result)
-    {
-        return result;
-    }
-}
-
-Xcb_Window::Xcb_Window(vsg::ref_ptr<WindowTraits> traits, vsg::AllocationCallbacks* allocator) :
-    Window(traits, allocator)
+Xcb_Window::Xcb_Window(vsg::ref_ptr<WindowTraits> traits) :
+    Inherit(traits)
 {
     bool fullscreen =  traits->fullscreen;
     uint32_t override_redirect = traits->overrideRedirect;
@@ -281,7 +254,7 @@ Xcb_Window::Xcb_Window(vsg::ref_ptr<WindowTraits> traits, vsg::AllocationCallbac
         // close connection
         xcb_disconnect(_connection);
 
-        throw Result("Failed to created Window, unable able to establish xcb connection.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
+        throw Exception{"Failed to created Window, unable able to establish xcb connection.", VK_ERROR_INVALID_EXTERNAL_HANDLE};
     }
 
     // TODO, should record Traits within Window? Should pass back selected screeenNum?
@@ -424,30 +397,12 @@ Xcb_Window::Xcb_Window(vsg::ref_ptr<WindowTraits> traits, vsg::AllocationCallbac
         }
     }
     xcb_map_window(_connection, _window);
-
-#if 0
-    // reconfigure the window position and size.
-    const uint32_t values[] = { 100, 200, 300, 400 };
-    xcb_configure_window (_connection, _window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, values);
-    xcb_flush(_connection);
-#endif
-
-    //xcb_flush(_connection);
+    _windowMapped = true;
 
     if (traits->shareWindow)
     {
-        throw Result("Error: vsg::Xcb_Window::create(...) Sharing of Windows not Not supported yet.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-    else
-    {
-        // use Xcb to create surface
-        vsg::ref_ptr<vsg::Surface> surface(new Xcb_Surface(_instance, _connection, _window, _traits->allocator));
-        if (!surface) throw Result("Error: vsg::Xcb_Window::create(...) failed to create Window, unable to create Xcb_Surface.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-
-        _surface = surface;
-
-        // set up device
-        initaliseDevice();
+        // share the _instance, _physicalDevice and _device;
+        share(*traits->shareWindow);
     }
 
     xcb_flush(_connection);
@@ -455,8 +410,17 @@ Xcb_Window::Xcb_Window(vsg::ref_ptr<WindowTraits> traits, vsg::AllocationCallbac
     // sleep to give the window manage time to do any repositing and resizing
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    // build the swap chain, reuse the reize() for this
-    resize();
+    // get the dimensions of the final window.
+    xcb_get_geometry_reply_t* geometry_reply = xcb_get_geometry_reply(_connection, xcb_get_geometry(_connection, _window), nullptr);
+    if (geometry_reply)
+    {
+        _extent2D.width = geometry_reply->width;
+        _extent2D.height = geometry_reply->height;
+        free(geometry_reply);
+    }
+
+    traits->nativeWindow = _window;
+    traits->systemConnection = _connection;
 }
 
 Xcb_Window::~Xcb_Window()
@@ -473,12 +437,24 @@ Xcb_Window::~Xcb_Window()
     }
 }
 
+void Xcb_Window::_initSurface()
+{
+    if (!_instance) _initInstance();
+
+    _surface = new Xcb_Surface(_instance, _connection, _window);
+}
+
 bool Xcb_Window::valid() const
 {
     return _window != 0;
 }
 
-bool Xcb_Window::pollEvents(Events& events)
+bool Xcb_Window::visible() const
+{
+    return _window!=0 && _windowMapped;
+}
+
+bool Xcb_Window::pollEvents(UIEvents& events)
 {
     unsigned numEventsBefore = events.size();
     xcb_generic_event_t* event;
@@ -498,11 +474,13 @@ bool Xcb_Window::pollEvents(Events& events)
         case(XCB_UNMAP_NOTIFY):
         {
             //std::cout<<"xcb_unmap_notify_event_t"<<std::endl;
+            _windowMapped = false;
             break;
         }
         case(XCB_MAP_NOTIFY):
         {
             //std::cout<<"xcb_map_notify_event_t"<<std::endl;
+            _windowMapped = true;
             break;
         }
         case (XCB_MAPPING_NOTIFY):
@@ -621,7 +599,20 @@ bool Xcb_Window::pollEvents(Events& events)
             auto button_press = reinterpret_cast<const xcb_button_press_event_t*>(event);
 
             vsg::clock::time_point event_time = _first_xcb_time_point + std::chrono::milliseconds(button_press->time - _first_xcb_timestamp);
-            events.emplace_back(new vsg::ButtonPressEvent(this, event_time, button_press->event_x, button_press->event_y, vsg::ButtonMask(button_press->state), button_press->detail));
+
+            // X11/Xvb treat scroll wheel up/down as button 4 and 5 so handle these as such
+            if (button_press->detail==4)
+            {
+                events.emplace_back(new vsg::ScrollWheelEvent(this, event_time, vsg::vec3(0.0f, 1.0f, 0.0f)));
+            }
+            else if (button_press->detail==5)
+            {
+                events.emplace_back(new vsg::ScrollWheelEvent(this, event_time, vsg::vec3(0.0f, -1.0f, 0.0f)));
+            }
+            else
+            {
+                events.emplace_back(new vsg::ButtonPressEvent(this, event_time, button_press->event_x, button_press->event_y, vsg::ButtonMask(button_press->state), button_press->detail));
+            }
 
             break;
         }
@@ -629,8 +620,12 @@ bool Xcb_Window::pollEvents(Events& events)
         {
             auto button_release = reinterpret_cast<const xcb_button_release_event_t*>(event);
 
-            vsg::clock::time_point event_time = _first_xcb_time_point + std::chrono::milliseconds(button_release->time - _first_xcb_timestamp);
-            events.emplace_back(new vsg::ButtonReleaseEvent(this, event_time, button_release->event_x, button_release->event_y, vsg::ButtonMask(button_release->state), button_release->detail));
+            // ignore button 4 and 5 as X11/Xcb use them as up/down scroll wheel events
+            if (button_release->detail !=4 && button_release->detail !=5)
+            {
+                vsg::clock::time_point event_time = _first_xcb_time_point + std::chrono::milliseconds(button_release->time - _first_xcb_timestamp);
+                events.emplace_back(new vsg::ButtonReleaseEvent(this, event_time, button_release->event_x, button_release->event_y, vsg::ButtonMask(button_release->state), button_release->detail));
+            }
 
             break;
         }
@@ -662,14 +657,14 @@ bool Xcb_Window::resized() const
 
 void Xcb_Window::resize()
 {
-    if (!_surface) return;
-
     xcb_get_geometry_reply_t* geometry_reply = xcb_get_geometry_reply(_connection, xcb_get_geometry(_connection, _window), nullptr);
     if (geometry_reply)
     {
-        buildSwapchain(geometry_reply->width, geometry_reply->height);
-
+        _extent2D.width = geometry_reply->width;
+        _extent2D.height = geometry_reply->height;
         free(geometry_reply);
+
+        buildSwapchain();
     }
     _windowResized = false;
 }

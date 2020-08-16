@@ -17,7 +17,6 @@ set(SOURCES
     core/External.cpp
     core/Object.cpp
     core/Objects.cpp
-    core/Result.cpp
     core/Visitor.cpp
     core/Version.cpp
 
@@ -39,8 +38,13 @@ set(SOURCES
     commands/BindIndexBuffer.cpp
     commands/BindVertexBuffers.cpp
     commands/Commands.cpp
+    commands/BlitImage.cpp
     commands/CopyImage.cpp
+    commands/CopyImageToBuffer.cpp
+    commands/CopyAndReleaseBufferDataCommand.cpp
+    commands/CopyAndReleaseImageDataCommand.cpp
     commands/PipelineBarrier.cpp
+    commands/Event.cpp
     commands/NextSubPass.cpp
     commands/Dispatch.cpp
     commands/PushConstants.cpp
@@ -50,6 +54,7 @@ set(SOURCES
     state/ComputePipeline.cpp
     state/DescriptorSet.cpp
     state/GraphicsPipeline.cpp
+    state/GraphicsPipelineStates.cpp
     state/Descriptor.cpp
     state/DescriptorBuffer.cpp
     state/DescriptorImage.cpp
@@ -80,11 +85,13 @@ set(SOURCES
     io/read.cpp
     io/write.cpp
 
+    traversals/ArrayState.cpp
     traversals/RecordTraversal.cpp
     traversals/CompileTraversal.cpp
     traversals/ComputeBounds.cpp
     traversals/Intersector.cpp
     traversals/LineSegmentIntersector.cpp
+    traversals/LoadPagedLOD.cpp
 
     threading/Affinity.cpp
     threading/OperationQueue.cpp
@@ -96,6 +103,7 @@ set(SOURCES
     viewer/Window.cpp
     viewer/Trackball.cpp
     viewer/CopyImageViewToWindow.cpp
+    viewer/ExecuteCommands.cpp
     viewer/CommandGraph.cpp
     viewer/RenderGraph.cpp
     viewer/Presentation.cpp
@@ -128,12 +136,15 @@ set(SOURCES
     vk/ImageData.cpp
     vk/ImageView.cpp
     vk/Instance.cpp
+    vk/MemoryBufferPools.cpp
     vk/PhysicalDevice.cpp
     vk/Queue.cpp
     vk/RenderPass.cpp
     vk/Semaphore.cpp
     vk/Surface.cpp
     vk/Swapchain.cpp
+
+    utils/CommandLine.cpp
 )
 
 # add platform specific Window implementation

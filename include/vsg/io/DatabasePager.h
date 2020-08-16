@@ -66,7 +66,7 @@ namespace vsg
 
         void add(Nodes& nodes);
 
-        ref_ptr<PagedLOD> take_when_avilable();
+        ref_ptr<PagedLOD> take_when_available();
 
         Nodes take_all_when_available();
 
@@ -92,6 +92,9 @@ namespace vsg
     {
     public:
         DatabasePager();
+
+        DatabasePager(const DatabasePager&) = delete;
+        DatabasePager& operator=(const DatabasePager& rhs) = delete;
 
         virtual void start();
 

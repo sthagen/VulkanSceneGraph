@@ -10,6 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
 #include <vsg/threading/OperationThreads.h>
 
 using namespace vsg;
@@ -23,7 +24,7 @@ OperationThreads::OperationThreads(uint32_t numThreads, ref_ptr<ActivityStatus> 
     auto run = [](ref_ptr<OperationQueue> q, ref_ptr<ActivityStatus> thread_status) {
         while (thread_status->active())
         {
-            ref_ptr<Operation> operation = q->take_when_avilable();
+            ref_ptr<Operation> operation = q->take_when_available();
             if (operation)
             {
                 operation->run();
@@ -33,7 +34,7 @@ OperationThreads::OperationThreads(uint32_t numThreads, ref_ptr<ActivityStatus> 
 
     for (size_t i = 0; i < numThreads; ++i)
     {
-        threads.emplace_back(std::thread(run, std::ref(queue), std::ref(status)));
+        threads.emplace_back(run, std::ref(queue), std::ref(status));
     }
 }
 

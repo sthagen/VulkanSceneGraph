@@ -10,46 +10,31 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/Fence.h>
 
 using namespace vsg;
 
-Fence::Fence(VkFence fence, Device* device, AllocationCallbacks* allocator) :
-    _vkFence(fence),
-    _device(device),
-    _allocator(allocator)
+Fence::Fence(Device* device, VkFenceCreateFlags flags) :
+    _device(device)
 {
+    VkFenceCreateInfo createFenceInfo = {};
+    createFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    createFenceInfo.flags = flags;
+    createFenceInfo.pNext = nullptr;
+
+    if (VkResult result = vkCreateFence(*device, &createFenceInfo, _device->getAllocationCallbacks(), &_vkFence); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create Fence.", result};
+    }
 }
 
 Fence::~Fence()
 {
     if (_vkFence)
     {
-        vkDestroyFence(*_device, _vkFence, _allocator);
-    }
-}
-
-Fence::Result Fence::create(Device* device, VkFenceCreateFlags flags, AllocationCallbacks* allocator)
-{
-    if (!device)
-    {
-        return Result("Error: vsg::Fence::create(...) failed to create Fence, undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    VkFenceCreateInfo createFenceInfo = {};
-    createFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    createFenceInfo.flags = flags;
-    createFenceInfo.pNext = nullptr;
-
-    VkFence fence;
-    VkResult result = vkCreateFence(*device, &createFenceInfo, allocator, &fence);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new Fence(fence, device, allocator));
-    }
-    else
-    {
-        return Result("Error: Failed to create Fence.", result);
+        vkDestroyFence(*_device, _vkFence, _device->getAllocationCallbacks());
     }
 }
 
@@ -69,4 +54,14 @@ void Fence::resetFenceAndDependencies()
     _dependentCommandBuffers.clear();
 
     reset();
+}
+
+VkResult Fence::wait(uint64_t timeout) const
+{
+    return vkWaitForFences(*_device, 1, &_vkFence, VK_TRUE, timeout);
+}
+
+VkResult Fence::reset() const
+{
+    return vkResetFences(*_device, 1, &_vkFence);
 }

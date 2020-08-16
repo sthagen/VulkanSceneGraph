@@ -56,8 +56,13 @@ namespace vsg
             value{} {}
         constexpr t_vec2(const t_vec2& v) :
             value{v.x, v.y} {}
+        constexpr t_vec2& operator=(const t_vec2&) = default;
         constexpr t_vec2(value_type in_x, value_type in_y) :
             value{in_x, in_y} {}
+
+        template<typename R>
+        constexpr explicit t_vec2(const t_vec2<R>& v) :
+            value{static_cast<T>(v.x), static_cast<T>(v.y)} {}
 
         constexpr std::size_t size() const { return 2; }
 
@@ -113,30 +118,36 @@ namespace vsg
 
     using vec2 = t_vec2<float>;
     using dvec2 = t_vec2<double>;
+    using bvec2 = t_vec2<std::int8_t>;
+    using svec2 = t_vec2<std::int16_t>;
+    using ivec2 = t_vec2<std::int32_t>;
     using ubvec2 = t_vec2<std::uint8_t>;
     using usvec2 = t_vec2<std::uint16_t>;
     using uivec2 = t_vec2<std::uint32_t>;
 
     VSG_type_name(vsg::vec2);
     VSG_type_name(vsg::dvec2);
+    VSG_type_name(vsg::bvec2);
+    VSG_type_name(vsg::svec2);
+    VSG_type_name(vsg::ivec2);
     VSG_type_name(vsg::ubvec2);
     VSG_type_name(vsg::usvec2);
     VSG_type_name(vsg::uivec2);
 
     template<typename T>
-    constexpr bool operator==(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr bool operator==(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
         return lhs[0] == rhs[0] && lhs[1] == rhs[1];
     }
 
     template<typename T>
-    constexpr bool operator!=(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr bool operator!=(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
-        return lhs[0] == rhs[0] || lhs[1] != rhs[1];
+        return lhs[0] != rhs[0] || lhs[1] != rhs[1];
     }
 
     template<typename T>
-    constexpr bool operator<(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr bool operator<(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
         if (lhs[0] < rhs[0]) return true;
         if (lhs[0] > rhs[0]) return false;
@@ -144,57 +155,57 @@ namespace vsg
     }
 
     template<typename T>
-    constexpr t_vec2<T> operator-(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr t_vec2<T> operator-(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
         return t_vec2<T>(lhs[0] - rhs[0], lhs[1] - rhs[1]);
     }
 
     template<typename T>
-    constexpr t_vec2<T> operator-(t_vec2<T> const& v)
+    constexpr t_vec2<T> operator-(const t_vec2<T>& v)
     {
         return t_vec2<T>(-v[0], -v[1]);
     }
 
     template<typename T>
-    constexpr t_vec2<T> operator+(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr t_vec2<T> operator+(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
         return t_vec2<T>(lhs[0] + rhs[0], lhs[1] + rhs[1]);
     }
 
     template<typename T>
-    constexpr t_vec2<T> operator*(t_vec2<T> const& lhs, T rhs)
+    constexpr t_vec2<T> operator*(const t_vec2<T>& lhs, T rhs)
     {
         return t_vec2<T>(lhs[0] * rhs, lhs[1] * rhs);
     }
 
     template<typename T>
-    constexpr t_vec2<T> operator/(t_vec2<T> const& lhs, T rhs)
+    constexpr t_vec2<T> operator/(const t_vec2<T>& lhs, T rhs)
     {
         T inv = static_cast<T>(1.0) / rhs;
         return t_vec2<T>(lhs[0] * inv, lhs[1] * inv);
     }
 
     template<typename T>
-    constexpr T length(t_vec2<T> const& v)
+    constexpr T length(const t_vec2<T>& v)
     {
         return std::sqrt(v[0] * v[0] + v[1] * v[1]);
     }
 
     template<typename T>
-    constexpr T length2(t_vec2<T> const& v)
+    constexpr T length2(const t_vec2<T>& v)
     {
         return v[0] * v[0] + v[1] * v[1];
     }
 
     template<typename T>
-    constexpr t_vec2<T> normalize(t_vec2<T> const& v)
+    constexpr t_vec2<T> normalize(const t_vec2<T>& v)
     {
         T inverse_len = static_cast<T>(1.0) / length(v);
         return t_vec2<T>(v[0] * inverse_len, v[1] * inverse_len);
     }
 
     template<typename T>
-    constexpr T dot(t_vec2<T> const& lhs, t_vec2<T> const& rhs)
+    constexpr T dot(const t_vec2<T>& lhs, const t_vec2<T>& rhs)
     {
         return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
     }

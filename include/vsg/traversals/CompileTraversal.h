@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/nodes/Group.h>
 #include <vsg/state/Descriptor.h>
 #include <vsg/state/ResourceHints.h>
+#include <vsg/viewer/Window.h>
 #include <vsg/vk/BufferData.h>
 #include <vsg/vk/CommandPool.h>
 #include <vsg/vk/Context.h>
@@ -45,6 +46,7 @@ namespace vsg
         void apply(const StateCommand& stateCommand) override;
         void apply(const DescriptorSet& descriptorSet) override;
         void apply(const Descriptor& descriptor) override;
+        void apply(const PagedLOD& plod) override;
 
         uint32_t computeNumDescriptorSets() const;
 
@@ -55,6 +57,10 @@ namespace vsg
         DescriptorTypeMap descriptorTypeMap;
         uint32_t maxSlot = 0;
         uint32_t externalNumDescriptorSets = 0;
+        bool containsPagedLOD = false;
+
+    protected:
+        uint32_t _numResourceHintsAbove = 0;
     };
     VSG_type_name(vsg::CollectDescriptorStats);
 
@@ -62,6 +68,7 @@ namespace vsg
     {
     public:
         explicit CompileTraversal(Device* in_device, BufferPreferences bufferPreferences = {});
+        explicit CompileTraversal(Window* window, ViewportState* viewport = nullptr, BufferPreferences bufferPreferences = {});
         CompileTraversal(const CompileTraversal& ct);
         ~CompileTraversal();
 

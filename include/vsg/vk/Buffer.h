@@ -19,14 +19,14 @@ namespace vsg
     class VSG_DECLSPEC Buffer : public Inherit<Object, Buffer>
     {
     public:
-        Buffer(VkBuffer Buffer, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, Device* device, AllocationCallbacks* allocator = nullptr);
-
-        using Result = vsg::Result<Buffer, VkResult, VK_SUCCESS>;
-        static Result create(Device* device, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, AllocationCallbacks* allocator = nullptr);
+        Buffer(Device* device, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode);
 
         VkBufferUsageFlags usage() const { return _usage; }
         VkSharingMode shaderMode() const { return _sharingMode; }
+
         VkBuffer buffer() const { return _buffer; }
+
+        operator VkBuffer() const { return _buffer; }
 
         Device* getDevice() { return _device; }
         const Device* getDevice() const { return _device; }
@@ -47,7 +47,7 @@ namespace vsg
             return result;
         }
 
-        operator VkBuffer() const { return _buffer; }
+        VkMemoryRequirements getMemoryRequirements() const;
 
         MemorySlots::OptionalOffset reserve(VkDeviceSize size, VkDeviceSize alignment) { return _memorySlots.reserve(size, alignment); }
         void release(VkDeviceSize offset, VkDeviceSize size) { _memorySlots.release(offset, size); }
@@ -63,11 +63,12 @@ namespace vsg
         VkSharingMode _sharingMode;
 
         ref_ptr<Device> _device;
-        ref_ptr<AllocationCallbacks> _allocator;
 
         ref_ptr<DeviceMemory> _deviceMemory;
         VkDeviceSize _memoryOffset;
 
         MemorySlots _memorySlots;
     };
+    VSG_type_name(vsg::Buffer);
+
 } // namespace vsg

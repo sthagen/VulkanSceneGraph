@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #include <vsg/commands/NextSubPass.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/CommandBuffer.h>
 
 using namespace vsg;
@@ -33,7 +34,7 @@ void NextSubPass::write(Output& output) const
     output.writeValue<uint32_t>("contents", contents);
 }
 
-void NextSubPass::dispatch(CommandBuffer& commandBuffer) const
+void NextSubPass::record(CommandBuffer& commandBuffer) const
 {
     vkCmdNextSubpass(commandBuffer, contents);
 }

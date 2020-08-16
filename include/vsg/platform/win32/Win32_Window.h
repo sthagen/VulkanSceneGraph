@@ -25,8 +25,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <windows.h>
 #include <windowsx.h>
 
-#include <iostream>
-
 namespace vsgWin32
 {
     class KeyboardMap : public vsg::Object
@@ -105,18 +103,20 @@ namespace vsgWin32
         return buttonMsg == WM_LBUTTONDOWN ? 1 : (buttonMsg == WM_RBUTTONDOWN ? 2 : buttonMsg == WM_MBUTTONDOWN ? 3 : (buttonMsg == WM_XBUTTONDOWN ? 4 : 0)); // need to determine x1, x2
     }
 
-    class Win32_Window : public vsg::Window
+    class Win32_Window : public vsg::Inherit<vsg::Window, Win32_Window>
     {
     public:
+
+        Win32_Window(vsg::ref_ptr<vsg::WindowTraits> traits);
         Win32_Window() = delete;
         Win32_Window(const Win32_Window&) = delete;
         Win32_Window operator=(const Win32_Window&) = delete;
 
-        static Result create(vsg::ref_ptr<vsg::WindowTraits> traits, vsg::AllocationCallbacks* allocator = nullptr);
+        const char* instanceExtensionSurfaceName() const override { return VK_KHR_WIN32_SURFACE_EXTENSION_NAME; }
 
         bool valid() const override { return _window; }
 
-        bool pollEvents(vsg::Events& events) override;
+        bool pollEvents(vsg::UIEvents& events) override;
 
         bool resized() const override;
 
@@ -130,12 +130,14 @@ namespace vsgWin32
     protected:
         virtual ~Win32_Window();
 
-        Win32_Window(vsg::ref_ptr<vsg::WindowTraits> traits, vsg::AllocationCallbacks* allocator = nullptr);
+        void _initSurface() override;
 
         HWND _window;
 
-        vsg::Events _bufferedEvents;
+        vsg::UIEvents _bufferedEvents;
         vsg::ref_ptr<KeyboardMap> _keyboard;
     };
 
 } // namespace vsgWin32
+
+EVSG_type_name(vsgWin32::Win32_Window);

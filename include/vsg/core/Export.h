@@ -1,5 +1,4 @@
-#ifndef VSG_EXPORT_H
-#define VSG_EXPORT_H
+#pragma once
 
 /* <editor-fold desc="MIT License">
 
@@ -14,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #if (defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__))
+#    pragma warning(disable : 4251)
 #    if defined(vsg_EXPORTS)
 #        define VSG_DECLSPEC __declspec(dllexport)
 #    elif defined(VSG_SHARED_LIBRARY)
@@ -23,6 +23,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #else
 #    define VSG_DECLSPEC
-#endif
-
 #endif

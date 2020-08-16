@@ -34,7 +34,7 @@ namespace vsg
         {
             for (auto& bufferData : bufferDataList)
             {
-                add(bufferData._buffer, bufferData._offset);
+                add(bufferData.buffer, bufferData.offset);
             }
         }
 
@@ -52,7 +52,7 @@ namespace vsg
 
         void compile(Context& context) override;
 
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
     protected:
         virtual ~BindVertexBuffers();

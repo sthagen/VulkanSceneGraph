@@ -10,6 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
 #include <vsg/threading/OperationQueue.h>
 
 using namespace vsg;
@@ -32,7 +33,7 @@ ref_ptr<Operation> OperationQueue::take()
     return operation;
 }
 
-ref_ptr<Operation> OperationQueue::take_when_avilable()
+ref_ptr<Operation> OperationQueue::take_when_available()
 {
     std::chrono::duration waitDuration = std::chrono::milliseconds(100);
 

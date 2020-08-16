@@ -10,6 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/state/DescriptorSet.h>
 #include <vsg/traversals/CompileTraversal.h>
 #include <vsg/vk/CommandBuffer.h>
@@ -67,41 +69,18 @@ void DescriptorSet::compile(Context& context)
         for (auto& descriptor : _descriptors) descriptor->compile(context);
 
 #if USE_MUTEX
-        std::lock_guard<std::mutex> lock(context.descriptorPool->getMutex());
+        std::scoped_lock<std::mutex> lock(context.descriptorPool->getMutex());
 #endif
         _implementation[context.deviceID] = DescriptorSet::Implementation::create(context.device, context.descriptorPool, _descriptorSetLayout);
         _implementation[context.deviceID]->assign(context, _descriptors);
     }
 }
 
-DescriptorSet::Implementation::Implementation(VkDescriptorSet descriptorSet, Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout) :
-    _descriptorSet(descriptorSet),
+DescriptorSet::Implementation::Implementation(Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout) :
     _device(device),
     _descriptorPool(descriptorPool),
     _descriptorSetLayout(descriptorSetLayout)
 {
-}
-
-DescriptorSet::Implementation::~Implementation()
-{
-    if (_descriptorSet)
-    {
-#if USE_MUTEX
-        std::lock_guard<std::mutex> lock(_descriptorPool->getMutex());
-#endif
-        vkFreeDescriptorSets(*_device, *_descriptorPool, 1, &_descriptorSet);
-    }
-}
-
-DescriptorSet::Implementation::Result DescriptorSet::Implementation::create(Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout)
-{
-    if (!device || !descriptorPool || !descriptorSetLayout)
-    {
-        if (!device) return Result("Error: vsg::DescriptorSet::create(...) failed to create DescriptorSet due to undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-        if (!descriptorPool) return Result("Error: vsg::DescriptorSet::create(...) failed to create DescriptorSet due to undefined DescriptorPool.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-        return Result("Error: vsg::DescriptorSet::create(...) failed to create DescriptorSet due to undefined descriptorSetLayout.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
     VkDescriptorSetLayout vkdescriptorSetLayout = descriptorSetLayout->vk(device->deviceID);
 
     VkDescriptorSetAllocateInfo descriptSetAllocateInfo = {};
@@ -110,15 +89,20 @@ DescriptorSet::Implementation::Result DescriptorSet::Implementation::create(Devi
     descriptSetAllocateInfo.descriptorSetCount = 1;
     descriptSetAllocateInfo.pSetLayouts = &vkdescriptorSetLayout;
 
-    VkDescriptorSet descriptorSet;
-    VkResult result = vkAllocateDescriptorSets(*device, &descriptSetAllocateInfo, &descriptorSet);
-    if (result == VK_SUCCESS)
+    if (VkResult result = vkAllocateDescriptorSets(*device, &descriptSetAllocateInfo, &_descriptorSet); result != VK_SUCCESS)
     {
-        return Result(new DescriptorSet::Implementation(descriptorSet, device, descriptorPool, descriptorSetLayout));
+        throw Exception{"Error: Failed to create DescriptorSet.", result};
     }
-    else
+}
+
+DescriptorSet::Implementation::~Implementation()
+{
+    if (_descriptorSet)
     {
-        return Result("Error: Failed to create DescriptorSet.", result);
+#if USE_MUTEX
+        std::scoped_lock<std::mutex> lock(_descriptorPool->getMutex());
+#endif
+        vkFreeDescriptorSets(*_device, *_descriptorPool, 1, &_descriptorSet);
     }
 }
 
@@ -204,7 +188,7 @@ void BindDescriptorSets::compile(Context& context)
     }
 }
 
-void BindDescriptorSets::dispatch(CommandBuffer& commandBuffer) const
+void BindDescriptorSets::record(CommandBuffer& commandBuffer) const
 {
     auto& vkd = _vulkanData[commandBuffer.deviceID];
     vkCmdBindDescriptorSets(commandBuffer, _bindPoint, vkd._vkPipelineLayout, _firstSet, static_cast<uint32_t>(vkd._vkDescriptorSets.size()), vkd._vkDescriptorSets.data(), 0, nullptr);
@@ -258,7 +242,7 @@ void BindDescriptorSet::compile(Context& context)
     vkd._vkDescriptorSet = _descriptorSet->vk(context.deviceID);
 }
 
-void BindDescriptorSet::dispatch(CommandBuffer& commandBuffer) const
+void BindDescriptorSet::record(CommandBuffer& commandBuffer) const
 {
     auto& vkd = _vulkanData[commandBuffer.deviceID];
 

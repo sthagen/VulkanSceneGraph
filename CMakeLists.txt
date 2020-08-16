@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(VSG
-    VERSION 0.0.0
+    VERSION 0.0.2
     DESCRIPTION "VulkanSceneGraph library"
     LANGUAGES CXX
 )
@@ -51,6 +51,11 @@ endif()
 
 set(VSG_WARNING_FLAGS ${VSG_WARNING_FLAGS} CACHE STRING "Compiler flags to use." FORCE)
 add_compile_options(${VSG_WARNING_FLAGS})
+
+if (MSVC)
+    # Increase Number of Sections in .Obj file
+    add_compile_options(/bigobj)
+endif()
 
 if (VULKAN_SDK)
     message("Within VulkanSceneGraph cmake, setting VULKAN_SDK env var to " ${VULKAN_SDK})

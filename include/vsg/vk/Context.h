@@ -24,104 +24,30 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/vk/DescriptorPool.h>
 #include <vsg/vk/Fence.h>
 #include <vsg/vk/ImageData.h>
-#include <vsg/vk/Semaphore.h>
+#include <vsg/vk/MemoryBufferPools.h>
 
 #include <vsg/commands/Command.h>
 
 namespace vsg
 {
-    struct BufferPreferences
-    {
-        VkDeviceSize minimumBufferSize = 16 * 1024 * 1024;
-        VkDeviceSize minimumBufferDeviceMemorySize = 16 * 1024 * 1024;
-        VkDeviceSize minimumImageDeviceMemorySize = 16 * 1024 * 1024;
-    };
-
-    class MemoryBufferPools : public Inherit<Object, MemoryBufferPools>
-    {
-    public:
-        MemoryBufferPools(const std::string& name, Device* in_device, BufferPreferences preferences);
-
-        std::string name;
-        ref_ptr<Device> device;
-        BufferPreferences bufferPreferences;
-
-        // transfer data settings
-        // used by BufferData.cpp, ImageData.cpp
-        using MemoryPools = std::vector<ref_ptr<DeviceMemory>>;
-        MemoryPools memoryPools;
-
-        using BufferPools = std::vector<ref_ptr<Buffer>>;
-        BufferPools bufferPools;
-
-        VkDeviceSize computeMemoryTotalAvailble() const;
-        VkDeviceSize computeMemoryTotalReserved() const;
-        VkDeviceSize computeBufferTotalAvailble() const;
-        VkDeviceSize computeBufferTotalReserved() const;
-
-        BufferData reserveBufferData(VkDeviceSize totalSize, VkDeviceSize alignment, VkBufferUsageFlags bufferUsageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags memoryProperties);
-
-        using DeviceMemoryOffset = std::pair<ref_ptr<DeviceMemory>, VkDeviceSize>;
-        DeviceMemoryOffset reserveMemory(VkMemoryRequirements memRequirements, VkMemoryPropertyFlags memoryProperties, void* pNextAllocInfo = nullptr);
-
-        using CopyPair = std::pair<BufferData, BufferData>;
-        using CopyQueue = std::deque<CopyPair>;
-
-        CopyQueue bufferDataToCopy;
-    };
-
-    class CopyAndReleaseBufferDataCommand : public Command
-    {
-    public:
-        CopyAndReleaseBufferDataCommand(BufferData src, BufferData dest) :
-            source(src),
-            destination(dest) {}
-
-        BufferData source;
-        BufferData destination;
-
-        void dispatch(CommandBuffer& commandBuffer) const override;
-
-    protected:
-        virtual ~CopyAndReleaseBufferDataCommand();
-    };
-
-    class CopyAndReleaseImageDataCommand : public Command
-    {
-    public:
-        CopyAndReleaseImageDataCommand(BufferData src, ImageData dest, uint32_t numMipMapLevels) :
-            source(src),
-            destination(dest),
-            mipLevels(numMipMapLevels) {}
-
-        void dispatch(CommandBuffer& commandBuffer) const override;
-
-        BufferData source;
-        ImageData destination;
-        uint32_t mipLevels = 1;
-
-    protected:
-        virtual ~CopyAndReleaseImageDataCommand();
-    };
-
-    class BuildAccelerationStructureCommand : public Inherit<Command, BuildAccelerationStructureCommand>
+    class VSG_DECLSPEC BuildAccelerationStructureCommand : public Inherit<Command, BuildAccelerationStructureCommand>
     {
     public:
         BuildAccelerationStructureCommand(Device* device, VkAccelerationStructureInfoNV* info, const VkAccelerationStructureNV& structure, Buffer* instanceBuffer, Allocator* allocator = nullptr);
 
         void compile(Context&) override {}
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
         ref_ptr<Device> _device;
         VkAccelerationStructureInfoNV* _accelerationStructureInfo;
         VkAccelerationStructureNV _accelerationStructure;
         ref_ptr<Buffer> _instanceBuffer;
 
-        // scratch buffer set after compile traversal before dispatch of build commands
+        // scratch buffer set after compile traversal before record of build commands
         ref_ptr<Buffer> _scratchBuffer;
     };
 
-    class Context
+    class VSG_DECLSPEC Context
     {
     public:
         Context(Device* in_device, BufferPreferences bufferPreferences = {});
@@ -136,7 +62,18 @@ namespace vsg
 
         // used by GraphicsPipeline.cpp
         ref_ptr<RenderPass> renderPass;
-        ref_ptr<ViewportState> viewport;
+
+        // pipeline states that are usually not set in a scene, e.g.,
+        // the viewport state, but might be set for some uses
+        GraphicsPipelineStates defaultPipelineStates;
+
+        // pipeline states that must be set to avoid Vulkan errors
+        // e.g., MultisampleState.
+        // XXX MultisampleState is complicated because the sample
+        // number needs to agree with the renderpass attachement, but
+        // other parts of the state, like alpha to coverage, belong to
+        // the scene graph .
+        GraphicsPipelineStates overridePipelineStates;
 
         // DescriptorSet.cpp
         ref_ptr<DescriptorPool> descriptorPool;
@@ -150,11 +87,9 @@ namespace vsg
         ref_ptr<Semaphore> semaphore;
         ref_ptr<ScratchMemory> scratchMemory;
 
-        std::vector<ref_ptr<CopyAndReleaseBufferDataCommand>> copyBufferDataCommands;
-        std::vector<ref_ptr<CopyAndReleaseImageDataCommand>> copyImageDataCommands;
         std::vector<ref_ptr<Command>> commands;
 
-        void dispatch();
+        void record();
         void waitForCompletion();
 
         ref_ptr<CommandBuffer> getOrCreateCommandBuffer();

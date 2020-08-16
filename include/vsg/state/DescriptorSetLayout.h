@@ -45,16 +45,12 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(Device* device, VkDescriptorSetLayout DescriptorSetLayout, AllocationCallbacks* allocator = nullptr);
+            Implementation(Device* device, const DescriptorSetLayoutBindings& descriptorSetLayoutBindings);
+
             virtual ~Implementation();
-
-            using Result = vsg::Result<Implementation, VkResult, VK_SUCCESS>;
-
-            static Result create(Device* device, const DescriptorSetLayoutBindings& descriptorSetLayoutBindings, AllocationCallbacks* allocator = nullptr);
 
             ref_ptr<Device> _device;
             VkDescriptorSetLayout _descriptorSetLayout;
-            ref_ptr<AllocationCallbacks> _allocator;
         };
 
         vk_buffer<ref_ptr<Implementation>> _implementation;

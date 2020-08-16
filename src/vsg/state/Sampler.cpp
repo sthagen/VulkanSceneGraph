@@ -10,6 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/state/Sampler.h>
 #include <vsg/traversals/CompileTraversal.h>
 
@@ -92,36 +94,19 @@ void Sampler::compile(Context& context)
     _implementation[context.deviceID] = Implementation::create(context.device, _samplerInfo);
 }
 
-Sampler::Implementation::Implementation(VkSampler sampler, Device* device, AllocationCallbacks* allocator) :
-    _sampler(sampler),
-    _device(device),
-    _allocator(allocator)
+Sampler::Implementation::Implementation(Device* device, const VkSamplerCreateInfo& createSamplerInfo) :
+    _device(device)
 {
+    if (VkResult result = vkCreateSampler(*device, &createSamplerInfo, _device->getAllocationCallbacks(), &_sampler); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create vkSampler.", result};
+    }
 }
 
 Sampler::Implementation::~Implementation()
 {
     if (_sampler)
     {
-        vkDestroySampler(*_device, _sampler, _allocator);
-    }
-}
-
-Sampler::Implementation::Result Sampler::Implementation::create(Device* device, const VkSamplerCreateInfo& createSamplerInfo, AllocationCallbacks* allocator)
-{
-    if (!device)
-    {
-        return Result("Error: vsg::Sampler::create(...) failed to create vkSampler, undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    VkSampler sampler;
-    VkResult result = vkCreateSampler(*device, &createSamplerInfo, allocator, &sampler);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new Sampler::Implementation(sampler, device, allocator));
-    }
-    else
-    {
-        return Result("Error: Failed to create vkSampler.", result);
+        vkDestroySampler(*_device, _sampler, _device->getAllocationCallbacks());
     }
 }

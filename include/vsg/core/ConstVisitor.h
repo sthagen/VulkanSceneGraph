@@ -54,15 +54,17 @@ namespace vsg
     class ComputePipeline;
     class Draw;
     class DrawIndexed;
-    class GraphicsPipelineState;
     class ShaderStage;
+    class GraphicsPipelineState;
     class VertexInputState;
     class InputAssemblyState;
+    class TessellationState;
     class ViewportState;
     class RasterizationState;
     class MultisampleState;
     class DepthStencilState;
     class ColorBlendState;
+    class DynamicState;
     class ResourceHints;
 
     // forward declare ui events classes
@@ -82,6 +84,7 @@ namespace vsg
     class TouchDownEvent;
     class TouchUpEvent;
     class TouchMoveEvent;
+    class ScrollWheelEvent;
     class TerminateEvent;
     class FrameEvent;
 
@@ -100,6 +103,7 @@ namespace vsg
         virtual void apply(const Object&);
         virtual void apply(const Objects&);
         virtual void apply(const External&);
+        virtual void apply(const Data&);
 
         // Values
         virtual void apply(const stringValue&);
@@ -121,9 +125,24 @@ namespace vsg
         virtual void apply(const dvec2Array&);
         virtual void apply(const dvec3Array&);
         virtual void apply(const dvec4Array&);
+        virtual void apply(const bvec2Array&);
+        virtual void apply(const bvec3Array&);
+        virtual void apply(const bvec4Array&);
+        virtual void apply(const svec2Array&);
+        virtual void apply(const svec3Array&);
+        virtual void apply(const svec4Array&);
+        virtual void apply(const ivec2Array&);
+        virtual void apply(const ivec3Array&);
+        virtual void apply(const ivec4Array&);
         virtual void apply(const ubvec2Array&);
         virtual void apply(const ubvec3Array&);
         virtual void apply(const ubvec4Array&);
+        virtual void apply(const usvec2Array&);
+        virtual void apply(const usvec3Array&);
+        virtual void apply(const usvec4Array&);
+        virtual void apply(const uivec2Array&);
+        virtual void apply(const uivec3Array&);
+        virtual void apply(const uivec4Array&);
         virtual void apply(const mat4Array&);
         virtual void apply(const dmat4Array&);
         virtual void apply(const block64Array&);
@@ -141,9 +160,24 @@ namespace vsg
         virtual void apply(const dvec2Array2D&);
         virtual void apply(const dvec3Array2D&);
         virtual void apply(const dvec4Array2D&);
+        virtual void apply(const bvec2Array2D&);
+        virtual void apply(const bvec3Array2D&);
+        virtual void apply(const bvec4Array2D&);
+        virtual void apply(const svec2Array2D&);
+        virtual void apply(const svec3Array2D&);
+        virtual void apply(const svec4Array2D&);
+        virtual void apply(const ivec2Array2D&);
+        virtual void apply(const ivec3Array2D&);
+        virtual void apply(const ivec4Array2D&);
         virtual void apply(const ubvec2Array2D&);
         virtual void apply(const ubvec3Array2D&);
         virtual void apply(const ubvec4Array2D&);
+        virtual void apply(const usvec2Array2D&);
+        virtual void apply(const usvec3Array2D&);
+        virtual void apply(const usvec4Array2D&);
+        virtual void apply(const uivec2Array2D&);
+        virtual void apply(const uivec3Array2D&);
+        virtual void apply(const uivec4Array2D&);
         virtual void apply(const block64Array2D&);
         virtual void apply(const block128Array2D&);
 
@@ -198,11 +232,13 @@ namespace vsg
         virtual void apply(const ShaderStage&);
         virtual void apply(const VertexInputState&);
         virtual void apply(const InputAssemblyState&);
+        virtual void apply(const TessellationState&);
         virtual void apply(const ViewportState&);
         virtual void apply(const RasterizationState&);
         virtual void apply(const MultisampleState&);
         virtual void apply(const DepthStencilState&);
         virtual void apply(const ColorBlendState&);
+        virtual void apply(const DynamicState&);
         virtual void apply(const ResourceHints&);
         virtual void apply(const Draw&);
         virtual void apply(const DrawIndexed&);
@@ -224,6 +260,7 @@ namespace vsg
         virtual void apply(const TouchDownEvent&);
         virtual void apply(const TouchUpEvent&);
         virtual void apply(const TouchMoveEvent&);
+        virtual void apply(const ScrollWheelEvent&);
         virtual void apply(const TerminateEvent&);
         virtual void apply(const FrameEvent&);
 

@@ -10,15 +10,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/Image.h>
 
 using namespace vsg;
 
-Image::Image(VkImage image, Device* device, AllocationCallbacks* allocator) :
+Image::Image(VkImage image, Device* device) :
     _image(image),
-    _device(device),
-    _allocator(allocator)
+    _device(device)
 {
+}
+
+Image::Image(Device* device, const VkImageCreateInfo& createImageInfo) :
+    _device(device)
+{
+    if (VkResult result = vkCreateImage(*device, &createImageInfo, _device->getAllocationCallbacks(), &_image); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create vkImage.", result};
+    }
 }
 
 Image::~Image()
@@ -30,25 +40,13 @@ Image::~Image()
 
     if (_image)
     {
-        vkDestroyImage(*_device, _image, _allocator);
+        vkDestroyImage(*_device, _image, _device->getAllocationCallbacks());
     }
 }
 
-Image::Result Image::create(Device* device, const VkImageCreateInfo& createImageInfo, AllocationCallbacks* allocator)
+VkMemoryRequirements Image::getMemoryRequirements() const
 {
-    if (!device)
-    {
-        return Result("Error: vsg::Image::create(...) failed to create vkImage, undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    VkImage image;
-    VkResult result = vkCreateImage(*device, &createImageInfo, allocator, &image);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new Image(image, device, allocator));
-    }
-    else
-    {
-        return Result("Error: Failed to create vkImage.", result);
-    }
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(*_device, _image, &memRequirements);
+    return memRequirements;
 }

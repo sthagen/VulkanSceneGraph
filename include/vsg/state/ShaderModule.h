@@ -64,8 +64,7 @@ namespace vsg
         SPIRV& spirv() { return _spirv; }
         const SPIRV& spirv() const { return _spirv; }
 
-        using Result = vsg::Result<ShaderModule, VkResult, VK_SUCCESS>;
-        static Result read(const std::string& filename);
+        static ref_ptr<ShaderModule> read(const std::string& filename);
 
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context);
@@ -81,17 +80,12 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(VkShaderModule shaderModule, Device* device, AllocationCallbacks* allocator);
+            Implementation(Device* device, ShaderModule* shader);
+
             virtual ~Implementation();
-
-            using Result = vsg::Result<Implementation, VkResult, VK_SUCCESS>;
-
-            /** Create a ComputePipeline.*/
-            static Result create(Device* device, ShaderModule* shader, AllocationCallbacks* allocator = nullptr);
 
             VkShaderModule _shaderModule;
             ref_ptr<Device> _device;
-            ref_ptr<AllocationCallbacks> _allocator;
         };
 
         vk_buffer<ref_ptr<Implementation>> _implementation;

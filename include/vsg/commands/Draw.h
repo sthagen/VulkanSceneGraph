@@ -19,7 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace vsg
 {
 
-    class Draw : public Inherit<Command, Draw>
+    class VSG_DECLSPEC Draw : public Inherit<Command, Draw>
     {
     public:
         Draw() {}
@@ -33,7 +33,7 @@ namespace vsg
         void read(Input& input) override;
         void write(Output& output) const override;
 
-        void dispatch(CommandBuffer& commandBuffer) const override
+        void record(CommandBuffer& commandBuffer) const override
         {
             vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
         }

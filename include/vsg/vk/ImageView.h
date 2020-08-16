@@ -16,18 +16,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsg
 {
+    class Context;
+
     class VSG_DECLSPEC ImageView : public Inherit<Object, ImageView>
     {
     public:
-        ImageView(VkImageView imageView, Device* device, Image* image = nullptr, AllocationCallbacks* allocator = nullptr);
-
-        using Result = vsg::Result<ImageView, VkResult, VK_SUCCESS>;
-
-        static Result create(Device* device, const VkImageViewCreateInfo& createInfo, AllocationCallbacks* allocator = nullptr);
-
-        static Result create(Device* device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, AllocationCallbacks* allocator = nullptr);
-
-        static Result create(Device* device, Image* image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, AllocationCallbacks* allocator = nullptr);
+        ImageView(Device* device, const VkImageViewCreateInfo& createInfo);
+        ImageView(Device* device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags);
+        ImageView(Device* device, Image* image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags);
 
         operator VkImageView() const { return _imageView; }
 
@@ -44,6 +40,15 @@ namespace vsg
         VkImageView _imageView;
         ref_ptr<Device> _device;
         ref_ptr<Image> _image;
-        ref_ptr<AllocationCallbacks> _allocator;
     };
+    VSG_type_name(vsg::ImageView);
+
+    using ImageViews = std::vector<ref_ptr<ImageView>>;
+
+    /// convinience function that create an ImageView and allocates device memory and an Image for it. For device memory allocattion the Context's DeviceMemoryPools are utilized.
+    extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Context& context, const VkImageCreateInfo& imageCreateInfo, VkImageAspectFlags aspectFlags);
+
+    /// convinience function that create an ImageView and allocates device memory and an Image for it.
+    extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Device* device, const VkImageCreateInfo& imageCreateInfo, VkImageAspectFlags aspectFlags);
+
 } // namespace vsg

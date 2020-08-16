@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2018 Robert Osfield
+Copyright(c) 2020 Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -10,16 +10,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/core/Result.h>
+#include <vsg/commands/CopyImageToBuffer.h>
+#include <vsg/io/Options.h>
+#include <vsg/vk/CommandBuffer.h>
 
-#include <iostream>
+using namespace vsg;
 
-std::ostream& vsg::notice_stream()
+CopyImageToBuffer::CopyImageToBuffer()
 {
-    return std::cout;
 }
 
-std::ostream& vsg::error_stream()
+void CopyImageToBuffer::record(CommandBuffer& commandBuffer) const
 {
-    return std::cerr;
+    vkCmdCopyImageToBuffer(
+        commandBuffer,
+        *srcImage,
+        srcImageLayout,
+        *dstBuffer,
+        static_cast<uint32_t>(regions.size()),
+        regions.data());
 }

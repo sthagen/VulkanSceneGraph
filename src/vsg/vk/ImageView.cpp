@@ -10,41 +10,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
+#include <vsg/vk/Context.h>
 #include <vsg/vk/ImageView.h>
 
 using namespace vsg;
 
-ImageView::ImageView(VkImageView imageView, Device* device, Image* image, AllocationCallbacks* allocator) :
-    _imageView(imageView),
-    _device(device),
-    _image(image),
-    _allocator(allocator)
+ImageView::ImageView(Device* device, const VkImageViewCreateInfo& createInfo) :
+    _device(device)
 {
-}
-
-ImageView::~ImageView()
-{
-    if (_imageView)
+    if (VkResult result = vkCreateImageView(*device, &createInfo, _device->getAllocationCallbacks(), &_imageView); result != VK_SUCCESS)
     {
-        vkDestroyImageView(*_device, _imageView, _allocator);
+        throw Exception{"Error: Failed to create ImageView.", result};
     }
 }
 
-ImageView::Result ImageView::create(Device* device, const VkImageViewCreateInfo& createInfo, AllocationCallbacks* allocator)
-{
-    VkImageView view;
-    VkResult result = vkCreateImageView(*device, &createInfo, allocator, &view);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new ImageView(view, device, nullptr, allocator));
-    }
-    else
-    {
-        return Result("Error: Failed to create ImageView.", result);
-    }
-}
-
-ImageView::Result ImageView::create(Device* device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, AllocationCallbacks* allocator)
+ImageView::ImageView(Device* device, VkImage image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags) :
+    _device(device)
 {
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -58,10 +41,15 @@ ImageView::Result ImageView::create(Device* device, VkImage image, VkImageViewTy
     createInfo.subresourceRange.layerCount = 1;
     createInfo.pNext = nullptr;
 
-    return create(device, createInfo, allocator);
+    if (VkResult result = vkCreateImageView(*device, &createInfo, _device->getAllocationCallbacks(), &_imageView); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create ImageView.", result};
+    }
 }
 
-ImageView::Result ImageView::create(Device* device, Image* image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags, AllocationCallbacks* allocator)
+ImageView::ImageView(Device* device, Image* image, VkImageViewType type, VkFormat format, VkImageAspectFlags aspectFlags) :
+    _device(device),
+    _image(image)
 {
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -75,7 +63,60 @@ ImageView::Result ImageView::create(Device* device, Image* image, VkImageViewTyp
     createInfo.subresourceRange.layerCount = 1;
     createInfo.pNext = nullptr;
 
-    Result result = create(device, createInfo, allocator);
-    if (result) result.object()->setImage(image);
-    return result;
+    if (VkResult result = vkCreateImageView(*device, &createInfo, _device->getAllocationCallbacks(), &_imageView); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create ImageView.", result};
+    }
+}
+
+ImageView::~ImageView()
+{
+    if (_imageView)
+    {
+        vkDestroyImageView(*_device, _imageView, _device->getAllocationCallbacks());
+    }
+}
+
+ref_ptr<ImageView> vsg::createImageView(vsg::Context& context, const VkImageCreateInfo& imageCreateInfo, VkImageAspectFlags aspectFlags)
+{
+    vsg::Device* device = context.device;
+
+    vsg::ref_ptr<vsg::Image> image;
+
+    image = vsg::Image::create(device, imageCreateInfo);
+
+    // get memory requirements
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(*device, *image, &memRequirements);
+
+    // allocate memory with out export memory info extension
+    auto [deviceMemory, offset] = context.deviceMemoryBufferPools->reserveMemory(memRequirements, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (!deviceMemory)
+    {
+        throw Exception{"Error: Failed allocate memory for image.", 0};
+    }
+
+    image->bind(deviceMemory, offset);
+
+    return vsg::ImageView::create(device, image, VK_IMAGE_VIEW_TYPE_2D, imageCreateInfo.format, aspectFlags);
+}
+
+ref_ptr<ImageView> vsg::createImageView(Device* device, const VkImageCreateInfo& imageCreateInfo, VkImageAspectFlags aspectFlags)
+{
+    vsg::ref_ptr<vsg::Image> image;
+
+    image = vsg::Image::create(device, imageCreateInfo);
+
+    // allocate memory with out export memory info extension
+    auto deviceMemory = DeviceMemory::create(device, image->getMemoryRequirements(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (!deviceMemory)
+    {
+        throw Exception{"Error: Failed allocate memory for image.", 0};
+    }
+
+    image->bind(deviceMemory, 0);
+
+    return vsg::ImageView::create(device, image, VK_IMAGE_VIEW_TYPE_2D, imageCreateInfo.format, aspectFlags);
 }

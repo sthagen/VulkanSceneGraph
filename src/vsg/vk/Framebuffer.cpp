@@ -10,40 +10,47 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/Framebuffer.h>
 
 using namespace vsg;
 
-Framebuffer::Framebuffer(VkFramebuffer framebuffer, Device* device, AllocationCallbacks* allocator) :
-    _framebuffer(framebuffer),
-    _device(device),
-    _allocator(allocator)
+Framebuffer::Framebuffer(ref_ptr<RenderPass> renderPass, const ImageViews& attachments, uint32_t width, uint32_t height, uint32_t layers) :
+    _device(renderPass->getDevice()),
+    _renderPass(renderPass),
+    _attachments(attachments),
+    _width(width),
+    _height(height),
+    _layers(layers)
 {
+
+    std::vector<VkImageView> vk_attachments;
+    for (auto& attachment : attachments)
+    {
+        vk_attachments.push_back(*attachment);
+    }
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.flags = 0;
+    framebufferInfo.renderPass = *_renderPass;
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(vk_attachments.size());
+    framebufferInfo.pAttachments = vk_attachments.data();
+    framebufferInfo.width = width;
+    framebufferInfo.height = height;
+    framebufferInfo.layers = layers;
+
+    if (VkResult result = vkCreateFramebuffer(*_device, &framebufferInfo, nullptr, &_framebuffer); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: vsg::Framebuffer::create(...) Failed to create VkFramebuffer.", result};
+    }
 }
 
 Framebuffer::~Framebuffer()
 {
     if (_framebuffer)
     {
-        vkDestroyFramebuffer(*_device, _framebuffer, _allocator);
-    }
-}
-
-Framebuffer::Result Framebuffer::create(Device* device, VkFramebufferCreateInfo& framebufferInfo, AllocationCallbacks* allocator)
-{
-    if (!device)
-    {
-        return Result("Error: vsg::Framebuffer::create(...) failed to create Framebuffer, undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    VkFramebuffer framebuffer;
-    VkResult result = vkCreateFramebuffer(*device, &framebufferInfo, allocator, &framebuffer);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new Framebuffer(framebuffer, device, allocator));
-    }
-    else
-    {
-        return Result("Error: vsg::Framebuffer::create(...) Failed to create VkFramebuffer.", result);
+        vkDestroyFramebuffer(*_device, _framebuffer, nullptr);
     }
 }

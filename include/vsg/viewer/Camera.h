@@ -18,7 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsg
 {
-    class Camera : public Inherit<Object, Camera>
+    class VSG_DECLSPEC Camera : public Inherit<Object, Camera>
     {
     public:
         Camera();
@@ -34,7 +34,8 @@ namespace vsg
         void setViewportState(ref_ptr<ViewportState> viewportState) { _viewportState = viewportState; }
         ViewportState* getViewportState() const { return _viewportState; }
 
-        VkRect2D getRenderArea() const { return _viewportState ? _viewportState->getScissor() : VkRect2D{}; }
+        VkViewport& getViewport() const { return _viewportState->getViewport(); }
+        VkRect2D& getRenderArea() const { return _viewportState->getScissor(); }
 
     protected:
         ref_ptr<ProjectionMatrix> _projectionMatrix;

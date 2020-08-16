@@ -25,7 +25,7 @@ namespace vsg
     public:
         RayTracingPipeline();
 
-        RayTracingPipeline(PipelineLayout* pipelineLayout, const ShaderStages& shaderStages, const RayTracingShaderGroups& shaderGroups, AllocationCallbacks* allocator = nullptr);
+        RayTracingPipeline(PipelineLayout* pipelineLayout, const ShaderStages& shaderStages, const RayTracingShaderGroups& shaderGroups);
 
         void read(Input& input) override;
         void write(Output& output) const override;
@@ -38,9 +38,6 @@ namespace vsg
 
         RayTracingShaderGroups& getRayTracingShaderGroups() { return _rayTracingShaderGroups; }
         const RayTracingShaderGroups& getRayTracingShaderGroups() const { return _rayTracingShaderGroups; }
-
-        AllocationCallbacks* getAllocationCallbacks() { return _allocator; }
-        const AllocationCallbacks* getAllocationCallbacks() const { return _allocator; }
 
         uint32_t& maxRecursionDepth() { return _maxRecursionDepth; }
         const uint32_t& maxRecursionDepth() const { return _maxRecursionDepth; }
@@ -59,13 +56,8 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(VkPipeline pipeline, Device* device, RayTracingPipeline* rayTracingPipeline, AllocationCallbacks* allocator = nullptr);
+            Implementation(Context& context, RayTracingPipeline* rayTracingPipeline);
             virtual ~Implementation();
-
-            using Result = vsg::Result<Implementation, VkResult, VK_SUCCESS>;
-
-            /** Create a GraphicsPipeline.*/
-            static Result create(Context& context, RayTracingPipeline* rayTracingPipeline);
 
             VkPipeline _pipeline;
 
@@ -74,7 +66,6 @@ namespace vsg
             ref_ptr<PipelineLayout> _pipelineLayout;
             ShaderStages _shaderStages;
             RayTracingShaderGroups _shaderGroups;
-            ref_ptr<AllocationCallbacks> _allocator;
         };
 
         vk_buffer<ref_ptr<Implementation>> _implementation;
@@ -83,8 +74,6 @@ namespace vsg
         ShaderStages _shaderStages;
         RayTracingShaderGroups _rayTracingShaderGroups;
         uint32_t _maxRecursionDepth = 1;
-
-        ref_ptr<AllocationCallbacks> _allocator;
     };
     VSG_type_name(vsg::RayTracingPipeline);
 
@@ -100,7 +89,7 @@ namespace vsg
         RayTracingPipeline* getPipeline() { return _pipeline; }
         const RayTracingPipeline* getPipeline() const { return _pipeline; }
 
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context) override;

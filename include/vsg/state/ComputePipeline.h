@@ -23,7 +23,7 @@ namespace vsg
     {
     public:
         ComputePipeline();
-        ComputePipeline(PipelineLayout* pipelineLayout, ShaderStage* shaderStage, AllocationCallbacks* allocator = nullptr);
+        ComputePipeline(PipelineLayout* pipelineLayout, ShaderStage* shaderStage);
 
         void read(Input& input) override;
         void write(Output& output) const override;
@@ -48,27 +48,20 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(VkPipeline pipeline, Device* device, PipelineLayout* pipelineLayout, ShaderStage* shaderStage, AllocationCallbacks* allocator);
+            Implementation(Context& context, Device* device, PipelineLayout* pipelineLayout, ShaderStage* shaderStage);
             virtual ~Implementation();
-
-            using Result = vsg::Result<Implementation, VkResult, VK_SUCCESS>;
-
-            /** Create a ComputePipeline.*/
-            static Result create(Context& context, Device* device, PipelineLayout* pipelineLayout, ShaderStage* shaderStage, AllocationCallbacks* allocator = nullptr);
 
             VkPipeline _pipeline;
 
             ref_ptr<Device> _device;
             ref_ptr<PipelineLayout> _pipelineLayout;
             ref_ptr<ShaderStage> _shaderStage;
-            ref_ptr<AllocationCallbacks> _allocator;
         };
 
         vk_buffer<ref_ptr<Implementation>> _implementation;
 
         ref_ptr<PipelineLayout> _pipelineLayout;
         ref_ptr<ShaderStage> _shaderStage;
-        ref_ptr<AllocationCallbacks> _allocator;
     };
     VSG_type_name(vsg::ComputePipeline);
 
@@ -84,7 +77,7 @@ namespace vsg
         ComputePipeline* getPipeline() { return _pipeline; }
         const ComputePipeline* getPipeline() const { return _pipeline; }
 
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context) override;

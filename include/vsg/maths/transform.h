@@ -12,6 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Export.h>
 #include <vsg/maths/mat3.h>
 #include <vsg/maths/mat4.h>
 #include <vsg/maths/vec3.h>
@@ -104,14 +105,14 @@ namespace vsg
     template<typename T>
     constexpr t_mat4<T> orthographic(T left, T right, T bottom, T top, T zNear, T zFar)
     {
-        return t_mat4<T>(2.0 / (right - left), 0.0, 0.0, -(right + left) / (right - left),
-                         0.0, 2.0 / (bottom - top), 0.0, -(bottom + top) / (bottom - top),
-                         0.0, 0.0, 1.0 / (zNear - zFar), zNear / (zNear - zFar),
-                         0.0, 0.0, 0.0, 1.0);
+        return t_mat4<T>(2.0 / (right - left), 0.0, 0.0, 0.0,
+                         0.0, 2.0 / (bottom - top), 0.0, 0.0,
+                         0.0, 0.0, 1.0 / (zNear - zFar), 0.0,
+                         -(right + left) / (right - left), -(bottom + top) / (bottom - top), zNear / (zNear - zFar), 1.0);
     }
 
     template<typename T>
-    constexpr t_mat4<T> lookAt(t_vec3<T> const& eye, t_vec3<T> const& center, t_vec3<T> const& up)
+    constexpr t_mat4<T> lookAt(const t_vec3<T>& eye, const t_vec3<T>& center, const t_vec3<T>& up)
     {
         using vec_type = t_vec3<T>;
 
@@ -128,21 +129,27 @@ namespace vsg
     }
 
     /// fast float matrix inversion that use assumes the matrix is composed of only scales, rotations and translations forming a 4x3 matrix.
-    extern mat4 inverse_4x3(const mat4& m);
+    extern VSG_DECLSPEC mat4 inverse_4x3(const mat4& m);
 
     /// fast double matrix inversion that use assumes the matrix is composed of only scales, rotations and translations forming a 4x3 matrix.
-    extern dmat4 inverse_4x3(const dmat4& m);
+    extern VSG_DECLSPEC dmat4 inverse_4x3(const dmat4& m);
 
     /// general purpose 4x4 float matrix inversion.
-    extern mat4 inverse_4x4(const mat4& m);
+    extern VSG_DECLSPEC mat4 inverse_4x4(const mat4& m);
 
     /// general purpose 4x4 float matrix inversion.
-    extern dmat4 inverse_4x4(const dmat4& m);
+    extern VSG_DECLSPEC dmat4 inverse_4x4(const dmat4& m);
 
     /// matrix float inversion with automatic selection of inverse_4x3 when appropriate, otherwise uses inverse_4x4
-    extern mat4 inverse(const mat4& m);
+    extern VSG_DECLSPEC mat4 inverse(const mat4& m);
 
     /// double matrix inversion with automatic selection of inverse_4x3 when appropriate, otherwise uses inverse_4x4
-    extern dmat4 inverse(const dmat4& m);
+    extern VSG_DECLSPEC dmat4 inverse(const dmat4& m);
+
+    /// compute the bounding sphere that encploses a frustum defined by specified float ModelViewMatrixProjection
+    extern VSG_DECLSPEC sphere computeFrustumBound(const mat4& m);
+
+    /// compute the bounding sphere that encploses a frustum defined by specified double ModelViewMatrixProjection
+    extern VSG_DECLSPEC dsphere computeFrustumBound(const dmat4& m);
 
 } // namespace vsg

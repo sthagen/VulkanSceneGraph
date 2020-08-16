@@ -21,7 +21,7 @@ namespace vsg
     class CommandBuffer;
     class Context;
 
-    class Command : public Inherit<Node, Command>
+    class VSG_DECLSPEC Command : public Inherit<Node, Command>
     {
     public:
         Command(Allocator* allocator = nullptr) :
@@ -29,7 +29,7 @@ namespace vsg
 
         virtual void compile(Context& /*context*/) {}
 
-        virtual void dispatch(CommandBuffer& commandBuffer) const = 0;
+        virtual void record(CommandBuffer& commandBuffer) const = 0;
     };
     VSG_type_name(vsg::Command);
 

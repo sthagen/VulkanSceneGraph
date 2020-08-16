@@ -10,6 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/vk/Buffer.h>
 
 #include <iostream>
@@ -18,14 +20,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsg;
 
-Buffer::Buffer(VkBuffer buffer, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, Device* device, AllocationCallbacks* allocator) :
-    _buffer(buffer),
+Buffer::Buffer(Device* device, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode) :
     _usage(usage),
     _sharingMode(sharingMode),
     _device(device),
-    _allocator(allocator),
     _memorySlots(size)
 {
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = sharingMode;
+
+    if (VkResult result = vkCreateBuffer(*device, &bufferInfo, _device->getAllocationCallbacks(), &_buffer); result != VK_SUCCESS)
+    {
+        throw Exception{"Error: Failed to create vkBuffer.", result};
+    }
 }
 
 Buffer::~Buffer()
@@ -36,7 +46,7 @@ Buffer::~Buffer()
 
     if (_buffer)
     {
-        vkDestroyBuffer(*_device, _buffer, _allocator);
+        vkDestroyBuffer(*_device, _buffer, _device->getAllocationCallbacks());
     }
 
     if (_deviceMemory)
@@ -48,27 +58,9 @@ Buffer::~Buffer()
 #endif
 }
 
-Buffer::Result Buffer::create(Device* device, VkDeviceSize size, VkBufferUsageFlags usage, VkSharingMode sharingMode, AllocationCallbacks* allocator)
+VkMemoryRequirements Buffer::getMemoryRequirements() const
 {
-    if (!device)
-    {
-        return Buffer::Result("Error: vsg::Buffer::create(...) failed to create vkBuffer, undefined Device.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    VkBufferCreateInfo bufferInfo = {};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = size;
-    bufferInfo.usage = usage;
-    bufferInfo.sharingMode = sharingMode;
-
-    VkBuffer buffer;
-    VkResult result = vkCreateBuffer(*device, &bufferInfo, allocator, &buffer);
-    if (result == VK_SUCCESS)
-    {
-        return Result(new Buffer(buffer, size, usage, sharingMode, device, allocator));
-    }
-    else
-    {
-        return Result("Error: Failed to create vkBuffer.", result);
-    }
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(*_device, _buffer, &memRequirements);
+    return memRequirements;
 }

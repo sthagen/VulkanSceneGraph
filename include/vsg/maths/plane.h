@@ -55,6 +55,8 @@ namespace vsg
         constexpr t_plane(const t_plane& pl) :
             value{pl[0], pl[1], pl[2], pl[3]} {}
 
+        constexpr t_plane& operator=(const t_plane&) = default;
+
         constexpr explicit t_plane(const t_vec4<T>& v) :
             value{v[0], v[1], v[2], v[3]} {}
 
@@ -103,13 +105,13 @@ namespace vsg
     VSG_type_name(vsg::dplane);
 
     template<typename T>
-    constexpr T distance(t_plane<T> const& pl, t_vec3<T> const& v)
+    constexpr T distance(const t_plane<T>& pl, const t_vec3<T>& v)
     {
         return dot(pl.n, v) + pl.p;
     }
 
     template<typename T, typename R>
-    constexpr T distance(t_plane<T> const& pl, t_vec3<R> const& v)
+    constexpr T distance(const t_plane<T>& pl, const t_vec3<R>& v)
     {
         using normal_type = typename t_plane<T>::normal_type;
         return dot(pl.n, normal_type(v)) + pl.p;
@@ -117,7 +119,7 @@ namespace vsg
 
     /** return true if bounding sphere is wholly or partially intersects with convex polytope defined by a list of planes with normals pointing inwards towards center of the polytope. */
     template<class PlaneItr, typename T>
-    constexpr bool intersect(PlaneItr first, PlaneItr last, t_sphere<T> const& s)
+    constexpr bool intersect(PlaneItr first, PlaneItr last, const t_sphere<T>& s)
     {
         auto negative_radius = -s.radius;
         for (auto itr = first; itr != last; ++itr)
@@ -128,7 +130,7 @@ namespace vsg
     }
 
     template<class Polytope, typename T>
-    constexpr bool intersect(Polytope const& polytope, t_sphere<T> const& s)
+    constexpr bool intersect(const Polytope& polytope, const t_sphere<T>& s)
     {
         return intersect(polytope.begin(), polytope.end(), s);
     }

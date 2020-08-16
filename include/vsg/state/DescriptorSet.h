@@ -57,12 +57,9 @@ namespace vsg
 
         struct Implementation : public Inherit<Object, Implementation>
         {
-            Implementation(VkDescriptorSet descriptorSet, Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout);
+            Implementation(Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout);
+
             virtual ~Implementation();
-
-            using Result = vsg::Result<Implementation, VkResult, VK_SUCCESS>;
-
-            static Result create(Device* device, DescriptorPool* descriptorPool, DescriptorSetLayout* descriptorSetLayout);
 
             void assign(Context& context, const Descriptors& descriptors);
 
@@ -127,7 +124,7 @@ namespace vsg
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context) override;
 
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
     protected:
         virtual ~BindDescriptorSets() {}
@@ -194,7 +191,7 @@ namespace vsg
         // compile the Vulkan object, context parameter used for Device
         void compile(Context& context) override;
 
-        void dispatch(CommandBuffer& commandBuffer) const override;
+        void record(CommandBuffer& commandBuffer) const override;
 
     protected:
         virtual ~BindDescriptorSet() {}

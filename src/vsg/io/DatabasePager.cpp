@@ -61,9 +61,9 @@ void DatabaseQueue::add(Nodes& nodes)
     _cv.notify_one();
 }
 
-ref_ptr<PagedLOD> DatabaseQueue::take_when_avilable()
+ref_ptr<PagedLOD> DatabaseQueue::take_when_available()
 {
-    //std::cout<<"DatabaseQueue::take_when_avilable() A _identifier = "<<_identifier<<" size = "<<_queue.size()<<std::endl;
+    //std::cout<<"DatabaseQueue::take_when_available() A _identifier = "<<_identifier<<" size = "<<_queue.size()<<std::endl;
 
     std::chrono::duration waitDuration = std::chrono::milliseconds(100);
     std::unique_lock lock(_mutex);
@@ -78,11 +78,11 @@ ref_ptr<PagedLOD> DatabaseQueue::take_when_avilable()
     // if the threads we are associated with should no longer running go for a quick exit and return nothing.
     if (_queue.empty() || _status->cancel())
     {
-        //std::cout<<"DatabaseQueue::take_when_avilable() C _identifier = "<<_identifier<<" empty"<<std::endl;
+        //std::cout<<"DatabaseQueue::take_when_available() C _identifier = "<<_identifier<<" empty"<<std::endl;
         return {};
     }
 
-    //std::cout<<"DatabaseQueue::take_when_avilable() D _identifier = "<<_identifier<<" "<<_queue.size()<<std::endl;
+    //std::cout<<"DatabaseQueue::take_when_available() D _identifier = "<<_identifier<<" "<<_queue.size()<<std::endl;
 
 #if 1
 
@@ -127,7 +127,7 @@ DatabaseQueue::Nodes DatabaseQueue::take_all_when_available()
         return {};
     }
 
-    //std::cout<<"DatabaseQueue::take_all_when_avilable() "<<_queue.size()<<std::endl;
+    //std::cout<<"DatabaseQueue::take_all_when_available() "<<_queue.size()<<std::endl;
 
     // remove and return the head of the queue
     Nodes nodes;
@@ -182,7 +182,7 @@ void DatabasePager::start()
 
         while (status->active())
         {
-            auto plod = requestQueue->take_when_avilable();
+            auto plod = requestQueue->take_when_available();
             if (plod)
             {
                 uint64_t frameDelta = databasePager.frameCount - plod->frameHighResLastUsed.load();
@@ -221,7 +221,7 @@ void DatabasePager::start()
 
     for (int i = 0; i < numReadThreads; ++i)
     {
-        _readThreads.emplace_back(std::thread(read, std::ref(_requestQueue), std::ref(_compileQueue), std::ref(_status), std::ref(*this)));
+        _readThreads.emplace_back(read, std::ref(_requestQueue), std::ref(_compileQueue), std::ref(_status), std::ref(*this));
     }
 
     //
@@ -293,9 +293,9 @@ void DatabasePager::start()
 
 #if REPORT_STATS
                 //std::cout<<"Compile Semaphore before wait Semaphore "<<*(ct->context.semaphore->data())<<" , count "<<ct->context.semaphore->numDependentSubmissions().load()<<std::endl;
-                int64_t before_wait_memoryTotalAvailble = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailble();
+                int64_t before_wait_memoryTotalAvailable = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailable();
                 int64_t before_wait_memoryTotalReserved = ct->context.stagingMemoryBufferPools->computeMemoryTotalReserved();
-                int64_t before_wait_bufferTotalAvailble = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailble();
+                int64_t before_wait_bufferTotalAvailable = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailable();
                 int64_t before_wait_bufferTotalReserved = ct->context.stagingMemoryBufferPools->computeBufferTotalReserved();
 #endif
 
@@ -305,14 +305,14 @@ void DatabasePager::start()
                 ct->context.waitForCompletion();
 
 #if REPORT_STATS
-                int64_t after_wait_memoryTotalAvailble = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailble();
+                int64_t after_wait_memoryTotalAvailable = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailable();
                 int64_t after_wait_memoryTotalReserved = ct->context.stagingMemoryBufferPools->computeMemoryTotalReserved();
-                int64_t after_wait_bufferTotalAvailble = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailble();
+                int64_t after_wait_bufferTotalAvailable = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailable();
                 int64_t after_wait_bufferTotalReserved = ct->context.stagingMemoryBufferPools->computeBufferTotalReserved();
 
-                std::cout << "waitForComplete() A before_wait_memoryTotalAvailble = " << before_wait_memoryTotalAvailble << ", after_wait_memoryTotalAvailble = " << after_wait_memoryTotalAvailble << std::endl;
+                std::cout << "waitForComplete() A before_wait_memoryTotalAvailable = " << before_wait_memoryTotalAvailable << ", after_wait_memoryTotalAvailable = " << after_wait_memoryTotalAvailable << std::endl;
                 std::cout << "waitForComplete() A before_wait_memoryTotalReserved = " << before_wait_memoryTotalReserved << ", after_wait_memoryTotalReserved = " << after_wait_memoryTotalReserved << std::endl;
-                std::cout << "waitForComplete() A before_wait_bufferTotalAvailble = " << before_wait_bufferTotalAvailble << ", after_wait_bufferTotalAvailble = " << after_wait_bufferTotalAvailble << ", delta = " << (after_wait_bufferTotalAvailble - before_wait_bufferTotalAvailble) << std::endl;
+                std::cout << "waitForComplete() A before_wait_bufferTotalAvailable = " << before_wait_bufferTotalAvailable << ", after_wait_bufferTotalAvailable = " << after_wait_bufferTotalAvailable << ", delta = " << (after_wait_bufferTotalAvailable - before_wait_bufferTotalAvailable) << std::endl;
                 std::cout << "waitForComplete() A before_wait_bufferTotalReserved = " << before_wait_bufferTotalReserved << ", after_wait_bufferTotalReserved = " << after_wait_bufferTotalReserved << ", delta = " << (after_wait_bufferTotalReserved - before_wait_bufferTotalReserved) << std::endl;
 
                 //std::cout<<"Compile Semaphore after wait Semaphore "<<*(ct->context.semaphore->data())<<" , count "<<ct->context.semaphore->numDependentSubmissions().load()<<std::endl;
@@ -387,19 +387,19 @@ void DatabasePager::start()
                 }
 
 #if REPORT_STATS
-                int64_t after_complile_traversal_memoryTotalAvailble = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailble();
+                int64_t after_complile_traversal_memoryTotalAvailable = ct->context.stagingMemoryBufferPools->computeMemoryTotalAvailable();
                 int64_t after_complile_traversal_memoryTotalReserved = ct->context.stagingMemoryBufferPools->computeMemoryTotalReserved();
-                int64_t after_complile_traversal_bufferTotalAvailble = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailble();
+                int64_t after_complile_traversal_bufferTotalAvailable = ct->context.stagingMemoryBufferPools->computeBufferTotalAvailable();
                 int64_t after_complile_traversal_bufferTotalReserved = ct->context.stagingMemoryBufferPools->computeBufferTotalReserved();
 
-                std::cout << "waitForComplete() B after_wait_memoryTotalAvailble = " << after_wait_memoryTotalAvailble << ", after_complile_traversal_memoryTotalAvailble = " << after_complile_traversal_memoryTotalAvailble << std::endl;
+                std::cout << "waitForComplete() B after_wait_memoryTotalAvailable = " << after_wait_memoryTotalAvailable << ", after_complile_traversal_memoryTotalAvailable = " << after_complile_traversal_memoryTotalAvailable << std::endl;
                 std::cout << "waitForComplete() B after_wait_memoryTotalReserved = " << after_wait_memoryTotalReserved << ", after_complile_traversal_memoryTotalReserved = " << after_complile_traversal_memoryTotalReserved << std::endl;
-                std::cout << "waitForComplete() B after_wait_bufferTotalAvailble = " << after_wait_bufferTotalAvailble << ", after_complile_traversal_bufferTotalAvailble = " << after_complile_traversal_bufferTotalAvailble << " delta = " << (after_complile_traversal_bufferTotalAvailble - after_wait_bufferTotalAvailble) << std::endl;
+                std::cout << "waitForComplete() B after_wait_bufferTotalAvailable = " << after_wait_bufferTotalAvailable << ", after_complile_traversal_bufferTotalAvailable = " << after_complile_traversal_bufferTotalAvailable << " delta = " << (after_complile_traversal_bufferTotalAvailable - after_wait_bufferTotalAvailable) << std::endl;
                 std::cout << "waitForComplete() B after_wait_bufferTotalReserved = " << after_wait_bufferTotalReserved << ", after_complile_traversal_bufferTotalReserved = " << after_complile_traversal_bufferTotalReserved << " delta = " << (after_complile_traversal_bufferTotalReserved - after_wait_bufferTotalReserved) << std::endl;
 #endif
                 if (!nodesCompiled.empty())
                 {
-                    ct->context.dispatch();
+                    ct->context.record();
 
                     for (auto& plod : nodesCompiled)
                     {
@@ -420,7 +420,7 @@ void DatabasePager::start()
 
     for (int i = 0; i < numCompileThreads; ++i)
     {
-        _compileThreads.emplace_back(std::thread(compile, std::ref(_compileQueue), std::ref(_toMergeQueue), std::ref(compileTraversal), std::ref(_status), std::ref(*this)));
+        _compileThreads.emplace_back(compile, std::ref(_compileQueue), std::ref(_toMergeQueue), std::ref(compileTraversal), std::ref(_status), std::ref(*this));
     }
 }
 

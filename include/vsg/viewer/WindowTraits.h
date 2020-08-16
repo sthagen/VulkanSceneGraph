@@ -14,7 +14,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <any>
 
-#include <vsg/vk/RenderPass.h>
 #include <vsg/vk/Swapchain.h>
 
 namespace vsg
@@ -59,6 +58,8 @@ namespace vsg
         bool overrideRedirect = false;
 
         SwapchainPreferences swapchainPreferences;
+        VkFormat depthFormat = VK_FORMAT_D24_UNORM_S8_UINT; //VK_FORMAT_D32_SFLOAT; // VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_SFLOAT_S8_UINT
+        VkImageUsageFlags depthImageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
         VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT;
         VkPipelineStageFlagBits imageAvailableSemaphoreWaitFlag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -69,18 +70,21 @@ namespace vsg
         vsg::Names instanceExtensionNames;
         vsg::Names deviceExtensionNames;
 
+        // Multisampling
+        // A bitmask of sample counts. The window's framebuffer will
+        // be configured with the maxium requested value that is
+        // supported by the device.
+        VkSampleCountFlags samples = VK_SAMPLE_COUNT_1_BIT;
         ref_ptr<Device> device;
-        ref_ptr<RenderPass> renderPass;
 
         Window* shareWindow = nullptr;
 
-        AllocationCallbacks* allocator = nullptr;
-
-        std::any nativeHandle;
-        void* nativeWindow = nullptr;
+        std::any nativeWindow;
+        std::any systemConnection;
 
     protected:
         virtual ~WindowTraits() {}
     };
+    VSG_type_name(vsg::WindowTraits);
 
 } // namespace vsg

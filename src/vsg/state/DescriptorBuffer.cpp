@@ -10,6 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
 #include <vsg/state/DescriptorBuffer.h>
 #include <vsg/traversals/CompileTraversal.h>
 #include <vsg/vk/CommandBuffer.h>
@@ -95,9 +96,9 @@ void DescriptorBuffer::assignTo(Context& context, VkWriteDescriptorSet& wds) con
     {
         const BufferData& data = _bufferDataList[i];
         VkDescriptorBufferInfo& info = pBufferInfo[i];
-        info.buffer = *(data._buffer);
-        info.offset = data._offset;
-        info.range = data._range;
+        info.buffer = *(data.buffer);
+        info.offset = data.offset;
+        info.range = data.range;
     }
 }
 

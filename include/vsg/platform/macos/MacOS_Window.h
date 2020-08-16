@@ -40,23 +40,24 @@ namespace vsgMacOS
     };
 
 
-    class MacOS_Window : public vsg::Window
+    class MacOS_Window : public vsg::Inherit<vsg::Window, MacOS_Window>
     {
     public:
+
+        MacOS_Window(vsg::ref_ptr<vsg::WindowTraits> traits);
         MacOS_Window() = delete;
         MacOS_Window(const MacOS_Window&) = delete;
         MacOS_Window operator = (const MacOS_Window&) = delete;
 
-        using Result = vsg::Result<vsg::Window, VkResult, VK_SUCCESS>;
-        static Result create(vsg::ref_ptr<vsg::WindowTraits> traits, vsg::AllocationCallbacks* allocator=nullptr);
+        const char* instanceExtensionSurfaceName() const override { return "VK_MVK_macos_surface"; }
 
-        virtual bool valid() const { return _window; }
+        bool valid() const override { return _window; }
 
-        virtual bool pollEvents(vsg::Events& events);
+        bool pollEvents(vsg::UIEvents& events) override;
 
-        virtual bool resized() const;
+        bool resized() const override;
 
-        virtual void resize();
+        void resize() override;
 
         bool handleNSEvent(NSEvent* anEvent);
 
@@ -76,7 +77,7 @@ namespace vsgMacOS
     protected:
         virtual ~MacOS_Window();
 
-        MacOS_Window(vsg::ref_ptr<vsg::WindowTraits> traits, vsg::AllocationCallbacks* allocator);
+        void _initSurface() override;
 
         vsg_MacOS_NSWindow* _window;
         vsg_MacOS_NSView* _view;
@@ -85,9 +86,10 @@ namespace vsgMacOS
         double _first_macos_timestamp = 0;
         vsg::clock::time_point _first_macos_time_point;
 
-        vsg::Events _bufferedEvents;
+        vsg::UIEvents _bufferedEvents;
         vsg::ref_ptr<KeyboardMap> _keyboard;
     };
 
-} // namespace vsg
+} // namespace vsgMacOS
 
+EVSG_type_name(vsgMacOS::MacOS_Window);

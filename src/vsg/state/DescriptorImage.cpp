@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/commands/PipelineBarrier.h>
+#include <vsg/io/Options.h>
 #include <vsg/state/DescriptorImage.h>
 #include <vsg/traversals/CompileTraversal.h>
 #include <vsg/vk/CommandBuffer.h>
@@ -102,17 +102,17 @@ void DescriptorImage::assignTo(Context& context, VkWriteDescriptorSet& wds) cons
         const ImageData& data = vkd.imageDataList[i];
 
         VkDescriptorImageInfo& info = pImageInfo[i];
-        if (data._sampler)
-            info.sampler = data._sampler->vk(context.deviceID);
+        if (data.sampler)
+            info.sampler = data.sampler->vk(context.deviceID);
         else
             info.sampler = 0;
 
-        if (data._imageView)
-            info.imageView = *(data._imageView);
+        if (data.imageView)
+            info.imageView = *(data.imageView);
         else
             info.imageView = 0;
 
-        info.imageLayout = data._imageLayout;
+        info.imageLayout = data.imageLayout;
     }
 }
 

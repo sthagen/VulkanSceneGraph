@@ -10,6 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
 #include <vsg/raytracing/TraceRays.h>
 #include <vsg/vk/CommandBuffer.h>
 #include <vsg/vk/Extensions.h>
@@ -20,7 +21,7 @@ TraceRays::TraceRays()
 {
 }
 
-void TraceRays::dispatch(CommandBuffer& commandBuffer) const
+void TraceRays::record(CommandBuffer& commandBuffer) const
 {
     Device* device = commandBuffer.getDevice();
     Extensions* extensions = Extensions::Get(device, true);
@@ -29,7 +30,7 @@ void TraceRays::dispatch(CommandBuffer& commandBuffer) const
 
     using BufferSize = std::pair<VkBuffer, VkDeviceSize>;
     auto bufferAndOffset = [](auto& shaderGroup) {
-        if (shaderGroup && shaderGroup->bufferData._buffer) return BufferSize(VkBuffer(*(shaderGroup->bufferData._buffer)), shaderGroup->bufferData._offset);
+        if (shaderGroup && shaderGroup->bufferData.buffer) return BufferSize(VkBuffer(*(shaderGroup->bufferData.buffer)), shaderGroup->bufferData.offset);
         return BufferSize(VK_NULL_HANDLE, 0);
     };
 

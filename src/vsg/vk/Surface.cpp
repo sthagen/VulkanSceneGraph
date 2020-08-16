@@ -10,14 +10,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsg/io/Options.h>
+#include <vsg/vk/PhysicalDevice.h>
 #include <vsg/vk/Surface.h>
 
 using namespace vsg;
 
-Surface::Surface(VkSurfaceKHR surface, Instance* instance, AllocationCallbacks* allocator) :
+Surface::Surface(VkSurfaceKHR surface, Instance* instance) :
     _surface(surface),
-    _instance(instance),
-    _allocator(allocator)
+    _instance(instance)
 {
 }
 
@@ -25,6 +26,6 @@ Surface::~Surface()
 {
     if (_surface)
     {
-        vkDestroySurfaceKHR(*_instance, _surface, _allocator);
+        vkDestroySurfaceKHR(*_instance, _surface, _instance->getAllocationCallbacks());
     }
 }

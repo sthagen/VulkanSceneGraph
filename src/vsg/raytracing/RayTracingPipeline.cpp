@@ -12,6 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/raytracing/RayTracingPipeline.h>
 
+#include <vsg/core/Exception.h>
+#include <vsg/io/Options.h>
 #include <vsg/traversals/CompileTraversal.h>
 #include <vsg/vk/CommandBuffer.h>
 #include <vsg/vk/Extensions.h>
@@ -26,11 +28,10 @@ RayTracingPipeline::RayTracingPipeline()
 {
 }
 
-RayTracingPipeline::RayTracingPipeline(PipelineLayout* pipelineLayout, const ShaderStages& shaderStages, const RayTracingShaderGroups& shaderGroups, AllocationCallbacks* allocator) :
+RayTracingPipeline::RayTracingPipeline(PipelineLayout* pipelineLayout, const ShaderStages& shaderStages, const RayTracingShaderGroups& shaderGroups) :
     _pipelineLayout(pipelineLayout),
     _shaderStages(shaderStages),
-    _rayTracingShaderGroups(shaderGroups),
-    _allocator(allocator)
+    _rayTracingShaderGroups(shaderGroups)
 {
 }
 
@@ -83,28 +84,16 @@ void RayTracingPipeline::compile(Context& context)
 //
 // RayTracingPipeline::Implementation
 //
-RayTracingPipeline::Implementation::Implementation(VkPipeline pipeline, Device* device, RayTracingPipeline* rayTracingPipeline, AllocationCallbacks* allocator) :
-    _pipeline(pipeline),
-    _device(device),
+RayTracingPipeline::Implementation::Implementation(Context& context, RayTracingPipeline* rayTracingPipeline) :
+    _device(context.device),
     _pipelineLayout(rayTracingPipeline->getPipelineLayout()),
     _shaderStages(rayTracingPipeline->getShaderStages()),
-    _shaderGroups(rayTracingPipeline->getRayTracingShaderGroups()),
-    _allocator(allocator)
+    _shaderGroups(rayTracingPipeline->getRayTracingShaderGroups())
 {
-}
 
-RayTracingPipeline::Implementation::Result RayTracingPipeline::Implementation::create(Context& context, RayTracingPipeline* rayTracingPipeline)
-{
     auto pipelineLayout = rayTracingPipeline->getPipelineLayout();
 
-    Device* device = context.device;
-
-    if (!device || !pipelineLayout)
-    {
-        return Result("Error: vsg::RayTracingPipeline::create(...) failed to create raytracing pipeline, inputs not defined.", VK_ERROR_INVALID_EXTERNAL_HANDLE);
-    }
-
-    Extensions* extensions = Extensions::Get(device, true);
+    Extensions* extensions = Extensions::Get(_device, true);
 
     VkRayTracingPipelineCreateInfoNV pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
@@ -138,46 +127,43 @@ RayTracingPipeline::Implementation::Result RayTracingPipeline::Implementation::c
 
     pipelineInfo.maxRecursionDepth = rayTracingPipeline->maxRecursionDepth();
 
-    VkPipeline pipeline;
-    VkResult result = extensions->vkCreateRayTracingPipelinesNV(*device, VK_NULL_HANDLE, 1, &pipelineInfo, rayTracingPipeline->getAllocationCallbacks(), &pipeline);
+    VkResult result = extensions->vkCreateRayTracingPipelinesNV(*_device, VK_NULL_HANDLE, 1, &pipelineInfo, _device->getAllocationCallbacks(), &_pipeline);
     if (result == VK_SUCCESS)
     {
-        auto rayTracingProperties = device->getPhysicalDevice()->getProperties<VkPhysicalDeviceRayTracingPropertiesNV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV>();
+        auto rayTracingProperties = _device->getPhysicalDevice()->getProperties<VkPhysicalDeviceRayTracingPropertiesNV, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV>();
         const uint32_t shaderGroupHandleSize = rayTracingProperties.shaderGroupHandleSize;
         const uint32_t sbtSize = shaderGroupHandleSize * pipelineInfo.groupCount;
 
         BufferData bindingTableBufferData = context.stagingMemoryBufferPools->reserveBufferData(sbtSize, 4, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        auto bindingTableBuffer = bindingTableBufferData._buffer;
+        auto bindingTableBuffer = bindingTableBufferData.buffer;
         auto bindingTableMemory = bindingTableBuffer->getDeviceMemory();
 
         void* buffer_data;
-        bindingTableMemory->map(bindingTableBuffer->getMemoryOffset() + bindingTableBufferData._offset, bindingTableBufferData._range, 0, &buffer_data);
+        bindingTableMemory->map(bindingTableBuffer->getMemoryOffset() + bindingTableBufferData.offset, bindingTableBufferData.range, 0, &buffer_data);
 
-        extensions->vkGetRayTracingShaderGroupHandlesNV(*device, pipeline, 0, static_cast<uint32_t>(rayTracingShaderGroups.size()), sbtSize, buffer_data);
+        extensions->vkGetRayTracingShaderGroupHandlesNV(*_device, _pipeline, 0, static_cast<uint32_t>(rayTracingShaderGroups.size()), sbtSize, buffer_data);
 
         bindingTableMemory->unmap();
 
-        VkDeviceSize offset = bindingTableBufferData._offset;
+        VkDeviceSize offset = bindingTableBufferData.offset;
 
         for (size_t i = 0; i < rayTracingShaderGroups.size(); ++i)
         {
-            rayTracingShaderGroups[i]->bufferData._buffer = bindingTableBuffer;
-            rayTracingShaderGroups[i]->bufferData._offset = offset;
+            rayTracingShaderGroups[i]->bufferData.buffer = bindingTableBuffer;
+            rayTracingShaderGroups[i]->bufferData.offset = offset;
 
             offset += shaderGroupHandleSize;
         }
-
-        return Result(new Implementation(pipeline, device, rayTracingPipeline, rayTracingPipeline->getAllocationCallbacks()));
     }
     else
     {
-        return Result("Error: vsg::Pipeline::createGraphics(...) failed to create VkPipeline.", result);
+        throw Exception{"Error: vsg::Pipeline::createGraphics(...) failed to create VkPipeline.", result};
     }
 }
 
 RayTracingPipeline::Implementation::~Implementation()
 {
-    vkDestroyPipeline(*_device, _pipeline, _allocator);
+    vkDestroyPipeline(*_device, _pipeline, _device->getAllocationCallbacks());
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -208,7 +194,7 @@ void BindRayTracingPipeline::write(Output& output) const
     output.writeObject("RayTracingPipeline", _pipeline.get());
 }
 
-void BindRayTracingPipeline::dispatch(CommandBuffer& commandBuffer) const
+void BindRayTracingPipeline::record(CommandBuffer& commandBuffer) const
 {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, _pipeline->vk(commandBuffer.deviceID));
     commandBuffer.setCurrentPipelineLayout(_pipeline->getPipelineLayout()->vk(commandBuffer.deviceID));

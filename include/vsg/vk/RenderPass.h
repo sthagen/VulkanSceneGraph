@@ -17,20 +17,37 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace vsg
 {
 
+    using AttachmentDescription = VkAttachmentDescription;
+
+    using AttachmentReference = VkAttachmentReference;
+
+    struct SubpassDescription
+    {
+        VkSubpassDescriptionFlags flags = 0;
+        VkPipelineBindPoint pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        std::vector<AttachmentReference> inputAttachments;
+        std::vector<AttachmentReference> colorAttachments;
+        std::vector<AttachmentReference> resolveAttachments;
+        std::vector<AttachmentReference> depthStencilAttachments;
+        std::vector<uint32_t> preserveAttachments;
+    };
+
+    using SubpassDependency = VkSubpassDependency;
+
     class VSG_DECLSPEC RenderPass : public Inherit<Object, RenderPass>
     {
     public:
-        RenderPass(VkRenderPass renderPass, Device* device, AllocationCallbacks* allocator = nullptr);
+        using Attachments = std::vector<AttachmentDescription>;
+        using Subpasses = std::vector<SubpassDescription>;
+        using Dependencies = std::vector<SubpassDependency>;
 
-        using Attachments = std::vector<VkAttachmentDescription>;
-        using Subpasses = std::vector<VkSubpassDescription>; // need lists of VkAttachmentReference
-        using Dependencies = std::vector<VkSubpassDependency>;
-
-        using Result = vsg::Result<RenderPass, VkResult, VK_SUCCESS>;
-        static Result create(Device* device, VkFormat imageFormat, VkFormat depthFormat, AllocationCallbacks* allocator = nullptr);
-        static Result create(Device* device, const Attachments& attachments, const Subpasses& subpasses, const Dependencies& dependencies, AllocationCallbacks* allocator = nullptr);
+        RenderPass(Device* device, const Attachments& attachments, const Subpasses& subpasses, const Dependencies& dependencies);
 
         operator VkRenderPass() const { return _renderPass; }
+
+        /// return the maximum VkAttachmentDescription.samples value of the assigned attachments.
+        /// Used for be deciding if multisampling is requied and the value to use when setting up the GraphicsPipeline's vsg::MultisampleState
+        VkSampleCountFlagBits maxSamples() const { return _maxSamples; }
 
         Device* getDevice() { return _device; }
         const Device* getDevice() const { return _device; }
@@ -39,8 +56,17 @@ namespace vsg
         virtual ~RenderPass();
 
         VkRenderPass _renderPass;
+        VkSampleCountFlagBits _maxSamples;
+
         ref_ptr<Device> _device;
-        ref_ptr<AllocationCallbacks> _allocator;
     };
+    VSG_type_name(vsg::RenderPass);
+
+    extern VSG_DECLSPEC AttachmentDescription defaultColorAttachment(VkFormat imageFormat);
+    extern VSG_DECLSPEC AttachmentDescription defaultDepthAttachment(VkFormat depthFormat);
+
+    extern VSG_DECLSPEC ref_ptr<RenderPass> createRenderPass(Device* device, VkFormat imageFormat, VkFormat depthFormat);
+    extern VSG_DECLSPEC ref_ptr<RenderPass> createMultisampledRenderPass(Device* device, VkFormat imageFormat, VkFormat depthFormat,
+                                                                         VkSampleCountFlagBits samples);
 
 } // namespace vsg

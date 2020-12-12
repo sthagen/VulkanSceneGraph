@@ -16,8 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <memory>
 
 #include <vsg/core/Object.h>
-#include <vsg/vk/BufferData.h>
-#include <vsg/vk/ImageData.h>
+#include <vsg/state/BufferInfo.h>
 
 namespace vsg
 {
@@ -38,7 +37,6 @@ namespace vsg
         BufferPreferences bufferPreferences;
 
         // transfer data settings
-        // used by BufferData.cpp, ImageData.cpp
         using MemoryPools = std::vector<ref_ptr<DeviceMemory>>;
         MemoryPools memoryPools;
 
@@ -50,15 +48,10 @@ namespace vsg
         VkDeviceSize computeBufferTotalAvailable() const;
         VkDeviceSize computeBufferTotalReserved() const;
 
-        BufferData reserveBufferData(VkDeviceSize totalSize, VkDeviceSize alignment, VkBufferUsageFlags bufferUsageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags memoryProperties);
+        BufferInfo reserveBuffer(VkDeviceSize totalSize, VkDeviceSize alignment, VkBufferUsageFlags bufferUsageFlags, VkSharingMode sharingMode, VkMemoryPropertyFlags memoryProperties);
 
         using DeviceMemoryOffset = std::pair<ref_ptr<DeviceMemory>, VkDeviceSize>;
         DeviceMemoryOffset reserveMemory(VkMemoryRequirements memRequirements, VkMemoryPropertyFlags memoryProperties, void* pNextAllocInfo = nullptr);
-
-        using CopyPair = std::pair<BufferData, BufferData>;
-        using CopyQueue = std::deque<CopyPair>;
-
-        CopyQueue bufferDataToCopy;
     };
 
 } // namespace vsg

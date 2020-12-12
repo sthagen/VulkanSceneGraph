@@ -12,36 +12,40 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/state/Descriptor.h>
-#include <vsg/vk/ImageData.h>
+#include <vsg/commands/Command.h>
+#include <vsg/state/BufferInfo.h>
+#include <vsg/vk/CommandBuffer.h>
 
 namespace vsg
 {
-
-    class VSG_DECLSPEC DescriptorImageView : public Inherit<Descriptor, DescriptorImageView>
+    /// Equivilant to VkDrawIndirectCommand that adds read/write support
+    struct DrawIndirectCommand
     {
-    public:
-        DescriptorImageView();
+        uint32_t vertexCount;
+        uint32_t instanceCount;
+        uint32_t firstVertex;
+        uint32_t firstInstance;
 
-        DescriptorImageView(ImageData imageData, uint32_t dstBinding = 0, uint32_t dstArrayElement = 0, VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        void read(vsg::Input& input)
+        {
+            input.read("vertexCount", vertexCount);
+            input.read("instanceCount", instanceCount);
+            input.read("firstVertex", firstVertex);
+            input.read("firstInstance", firstInstance);
+        }
 
-        /** ImageDataList is automatically filled in by the DecriptorImage::compile() using the sampler and image data objects.*/
-        ImageDataList& getImageDataList() { return _imageDataList; }
-        const ImageDataList& getImageDataList() const { return _imageDataList; }
-
-        void read(Input& input) override;
-        void write(Output& output) const override;
-
-        void compile(Context& context) override;
-
-        void assignTo(Context& context, VkWriteDescriptorSet& wds) const override;
-
-        uint32_t getNumDescriptors() const override;
-
-    protected:
-        ImageDataList _imageDataList;
-        bool _compiled;
+        void write(vsg::Output& output) const
+        {
+            output.write("vertexCount", vertexCount);
+            output.write("instanceCount", instanceCount);
+            output.write("firstVertex", firstVertex);
+            output.write("firstInstance", firstInstance);
+        }
     };
-    VSG_type_name(vsg::DescriptorImageView);
+
+    template<>
+    constexpr bool has_read_write<DrawIndirectCommand>() { return true; }
+
+    VSG_array(DrawIndirectCommandArray, DrawIndirectCommand);
 
 } // namespace vsg

@@ -1,3 +1,5 @@
+#pragma once
+
 /* <editor-fold desc="MIT License">
 
 Copyright(c) 2018 Robert Osfield
@@ -10,43 +12,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/core/Exception.h>
-#include <vsg/io/Options.h>
-#include <vsg/vk/Image.h>
+#include <vsg/nodes/Group.h>
 
-using namespace vsg;
+#include <vsg/viewer/Camera.h>
+#include <vsg/viewer/Window.h>
 
-Image::Image(VkImage image, Device* device) :
-    _image(image),
-    _device(device)
+namespace vsg
 {
-}
-
-Image::Image(Device* device, const VkImageCreateInfo& createImageInfo) :
-    _device(device)
-{
-    if (VkResult result = vkCreateImage(*device, &createImageInfo, _device->getAllocationCallbacks(), &_image); result != VK_SUCCESS)
+    /// View class is Group class that pairs a Camera that defines the view with a subgraph that defines the scene that is being viewed/rendered
+    class VSG_DECLSPEC View : public Inherit<Group, View>
     {
-        throw Exception{"Error: Failed to create vkImage.", result};
-    }
-}
+    public:
+        View();
 
-Image::~Image()
-{
-    if (_deviceMemory)
-    {
-        _deviceMemory->release(_memoryOffset, 0); // TODO, we don't locally have a size allocated
-    }
+        View(ref_ptr<Camera> in_camera, ref_ptr<Node> in_scenegraph = {});
 
-    if (_image)
-    {
-        vkDestroyImage(*_device, _image, _device->getAllocationCallbacks());
-    }
-}
+        /// camera controls the viewport state and projection and view matrices
+        ref_ptr<Camera> camera;
 
-VkMemoryRequirements Image::getMemoryRequirements() const
-{
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(*_device, _image, &memRequirements);
-    return memRequirements;
-}
+        /// viewID is automatically assinged by Viewer::compile()
+        uint32_t viewID = 0;
+    };
+
+} // namespace vsg

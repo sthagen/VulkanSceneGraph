@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(VSG
-    VERSION 0.0.2
+    VERSION 0.0.3
     DESCRIPTION "VulkanSceneGraph library"
     LANGUAGES CXX
 )
-set(VSG_SOVERSION 0)
+set(VSG_SOVERSION 1)
 
 # create the version header
 set(VSG_MAX_DEVICES 1 CACHE STRING "Set maximum number of vk/vsg::Device that are supported.")
@@ -65,6 +65,10 @@ endif()
 
 find_package(Vulkan)
 find_package(Threads)
+
+if (NOT DEFINED glslang_FOUND)
+    find_package(vsg_glslang REQUIRED CONFIG PATHS ${VSG_SOURCE_DIR}/src/vsg)
+endif()
 
 if (ANDROID)
     find_library(AndroidLib android)

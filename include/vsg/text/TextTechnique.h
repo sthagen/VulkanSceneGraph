@@ -1,6 +1,8 @@
+#pragma once
+
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2018 Robert Osfield
+Copyright(c) 2020 Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -10,34 +12,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/core/Exception.h>
-#include <vsg/io/Options.h>
-#include <vsg/vk/BufferView.h>
+#include <vsg/nodes/Node.h>
+#include <vsg/text/Font.h>
+#include <vsg/text/TextLayout.h>
+#include <vsg/text/TextTechnique.h>
 
-using namespace vsg;
-
-BufferView::BufferView(Buffer* buffer, VkFormat format, VkDeviceSize offset, VkDeviceSize range) :
-    _device(buffer->getDevice()),
-    _buffer(buffer)
+namespace vsg
 {
-    VkBufferViewCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
-    createInfo.buffer = *buffer;
-    createInfo.format = format;
-    createInfo.offset = offset;
-    createInfo.range = range;
-    createInfo.pNext = nullptr;
 
-    if (VkResult result = vkCreateBufferView(*(buffer->getDevice()), &createInfo, _device->getAllocationCallbacks(), &_bufferView); result != VK_SUCCESS)
-    {
-        throw Exception{"Error: Failed to create BufferView.", result};
-    }
-}
+    // forward declare Text
+    class Text;
 
-BufferView::~BufferView()
-{
-    if (_bufferView)
+    // base class for implementation of rendering backend for Text
+    class VSG_DECLSPEC TextTechnique : public Inherit<Object, TextTechnique>
     {
-        vkDestroyBufferView(*_device, _bufferView, _device->getAllocationCallbacks());
-    }
-}
+    public:
+        virtual void setup(Text* text, uint32_t minimumAllocation = 0) = 0;
+    };
+    VSG_type_name(vsg::TextTechnique);
+
+} // namespace vsg

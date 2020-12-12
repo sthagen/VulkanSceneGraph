@@ -12,28 +12,44 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsg/vk/Buffer.h>
+#include <vsg/state/ImageView.h>
+#include <vsg/state/Sampler.h>
 
 namespace vsg
 {
-    class VSG_DECLSPEC BufferView : public Inherit<Object, BufferView>
+    /// Settings that map to VkDescriptorImageInfo
+    class VSG_DECLSPEC ImageInfo
     {
     public:
-        BufferView(Buffer* buffer, VkFormat format, VkDeviceSize offset, VkDeviceSize range);
+        ImageInfo() :
+            imageLayout(VK_IMAGE_LAYOUT_UNDEFINED) {}
 
-        operator VkBufferView() const { return _bufferView; }
+        ImageInfo(const ImageInfo& id) :
+            sampler(id.sampler),
+            imageView(id.imageView),
+            imageLayout(id.imageLayout) {}
 
-        Device* getDevice() { return _device; }
-        const Device* getDevice() const { return _device; }
+        ImageInfo(Sampler* in_sampler, ImageView* in_imageView, VkImageLayout in_imageLayout = VK_IMAGE_LAYOUT_UNDEFINED) :
+            sampler(in_sampler),
+            imageView(in_imageView),
+            imageLayout(in_imageLayout) {}
 
-        Buffer* getBuffer() { return _buffer; }
-        const Buffer* getBuffer() const { return _buffer; }
+        ImageInfo& operator=(const ImageInfo& rhs)
+        {
+            sampler = rhs.sampler;
+            imageView = rhs.imageView;
+            imageLayout = rhs.imageLayout;
+            return *this;
+        }
 
-    protected:
-        virtual ~BufferView();
+        explicit operator bool() const { return sampler.valid() && imageView.valid(); }
 
-        VkBufferView _bufferView;
-        ref_ptr<Device> _device;
-        ref_ptr<Buffer> _buffer;
+        void computeNumMipMapLevels();
+
+        ref_ptr<Sampler> sampler;
+        ref_ptr<ImageView> imageView;
+        VkImageLayout imageLayout;
     };
+    using ImageInfoList = std::vector<ImageInfo>;
+
 } // namespace vsg

@@ -18,13 +18,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Object.h>
 #include <vsg/core/ScratchMemory.h>
 #include <vsg/nodes/Group.h>
+#include <vsg/state/BufferInfo.h>
 #include <vsg/state/GraphicsPipeline.h>
-#include <vsg/vk/BufferData.h>
 #include <vsg/vk/CommandPool.h>
 #include <vsg/vk/DescriptorPool.h>
 #include <vsg/vk/Fence.h>
-#include <vsg/vk/ImageData.h>
 #include <vsg/vk/MemoryBufferPools.h>
+#include <vsg/vk/ShaderCompiler.h>
 
 #include <vsg/commands/Command.h>
 
@@ -46,19 +46,28 @@ namespace vsg
         // scratch buffer set after compile traversal before record of build commands
         ref_ptr<Buffer> _scratchBuffer;
     };
+    VSG_type_name(vsg::BuildAccelerationStructureCommand);
 
-    class VSG_DECLSPEC Context
+    class VSG_DECLSPEC Context : public Inherit<Object, Context>
     {
     public:
+        Context();
+
         Context(Device* in_device, BufferPreferences bufferPreferences = {});
 
         Context(const Context& context);
 
         virtual ~Context();
 
-        // used by BufferData.cpp, ComputePipeline.cpp, Descriptor.cpp, Descriptor.cpp, DescriptorSet.cpp, DescriptorSetLayout.cpp, GraphicsPipeline.cpp, ImageData.cpp, PipelineLayout.cpp, ShaderModule.cpp
         const uint32_t deviceID = 0;
         ref_ptr<Device> device;
+
+        uint32_t viewID = 0;
+
+        // get exisitng ShaderCompile or create a new one when GLSLang is supported
+        ShaderCompiler* getOrCreateShaderCompiler();
+
+        ref_ptr<CommandBuffer> getOrCreateCommandBuffer();
 
         // used by GraphicsPipeline.cpp
         ref_ptr<RenderPass> renderPass;
@@ -75,11 +84,13 @@ namespace vsg
         // the scene graph .
         GraphicsPipelineStates overridePipelineStates;
 
-        // DescriptorSet.cpp
+        // DescriptorPool
         ref_ptr<DescriptorPool> descriptorPool;
 
+        // ShaderCompiler
+        ref_ptr<ShaderCompiler> shaderCompiler;
+
         // transfer data settings
-        // used by BufferData.cpp, ImageData.cpp
         ref_ptr<Queue> graphicsQueue;
         ref_ptr<CommandPool> commandPool;
         ref_ptr<CommandBuffer> commandBuffer;
@@ -92,8 +103,6 @@ namespace vsg
         void record();
         void waitForCompletion();
 
-        ref_ptr<CommandBuffer> getOrCreateCommandBuffer();
-
         ref_ptr<MemoryBufferPools> deviceMemoryBufferPools;
         ref_ptr<MemoryBufferPools> stagingMemoryBufferPools;
 
@@ -101,5 +110,6 @@ namespace vsg
         VkDeviceSize scratchBufferSize;
         std::vector<ref_ptr<BuildAccelerationStructureCommand>> buildAccelerationStructureCommands;
     };
+    VSG_type_name(vsg::Context);
 
 } // namespace vsg

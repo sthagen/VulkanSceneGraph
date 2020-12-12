@@ -26,6 +26,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/threading/atomics.h>
 #include <vsg/traversals/RecordTraversal.h>
 #include <vsg/ui/ApplicationEvent.h>
+#include <vsg/viewer/View.h>
 #include <vsg/vk/CommandBuffer.h>
 #include <vsg/vk/RenderPass.h>
 #include <vsg/vk/State.h>
@@ -34,8 +35,7 @@ using namespace vsg;
 
 #include <iostream>
 
-#define INLINE_TRAVERSE 1
-#define USE_FRUSTUM_ARRAY 1
+#define INLINE_TRAVERSE 0
 
 RecordTraversal::RecordTraversal(CommandBuffer* commandBuffer, uint32_t maxSlot, FrameStamp* fs) :
     _frameStamp(fs),
@@ -318,4 +318,27 @@ void RecordTraversal::apply(const Command& command)
     //    std::cout<<"Visiting Command "<<std::endl;
     _state->record();
     command.record(*(_state->_commandBuffer));
+}
+
+void RecordTraversal::apply(const View& view)
+{
+    _state->_commandBuffer->viewID = view.viewID;
+
+    //std::cout<<"RecordTraversal::apply(const View& view) "<<view.viewID<<std::endl;
+
+    if (view.camera)
+    {
+        dmat4 projMatrix, viewMatrix;
+        view.camera->getProjectionMatrix()->get(projMatrix);
+        view.camera->getViewMatrix()->get(viewMatrix);
+
+        // TODO push/pop project and view matrices
+        setProjectionAndViewMatrix(projMatrix, viewMatrix);
+
+        view.traverse(*this);
+    }
+    else
+    {
+        view.traverse(*this);
+    }
 }

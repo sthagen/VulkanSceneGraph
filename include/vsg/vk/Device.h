@@ -34,7 +34,7 @@ namespace vsg
     class VSG_DECLSPEC Device : public Inherit<Object, Device>
     {
     public:
-        Device(PhysicalDevice* physicalDevice, const QueueSettings& queueSettings, const Names& layers, const Names& deviceExtensions, AllocationCallbacks* allocator = nullptr);
+        Device(PhysicalDevice* physicalDevice, const QueueSettings& queueSettings, const Names& layers, const Names& deviceExtensions, const VkPhysicalDeviceFeatures& deviceFeatures = {}, AllocationCallbacks* allocator = nullptr);
 
         Instance* getInstance() { return _instance.get(); }
         const Instance* getInstance() const { return _instance.get(); }
@@ -51,7 +51,6 @@ namespace vsg
         static uint32_t maxNumDevices();
 
         const uint32_t deviceID = 0;
-
 
         ref_ptr<Queue> getQueue(uint32_t queueFamilyIndex, uint32_t queueIndex = 0);
 

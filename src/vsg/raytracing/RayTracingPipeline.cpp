@@ -69,6 +69,28 @@ void RayTracingPipeline::compile(Context& context)
 {
     if (!_implementation[context.deviceID])
     {
+        // compile shaders if required
+        bool requiresShaderCompiler = false;
+        for (auto& shaderStage : _shaderStages)
+        {
+            if (shaderStage->module)
+            {
+                if (shaderStage->module->code.empty() && !(shaderStage->module->source.empty()))
+                {
+                    requiresShaderCompiler = true;
+                }
+            }
+        }
+
+        if (requiresShaderCompiler)
+        {
+            auto shaderCompiler = context.getOrCreateShaderCompiler();
+            if (shaderCompiler)
+            {
+                shaderCompiler->compile(_shaderStages); // may need to map defines and paths in some fashion
+            }
+        }
+
         _pipelineLayout->compile(context);
 
         for (auto& shaderStage : _shaderStages)
@@ -134,23 +156,23 @@ RayTracingPipeline::Implementation::Implementation(Context& context, RayTracingP
         const uint32_t shaderGroupHandleSize = rayTracingProperties.shaderGroupHandleSize;
         const uint32_t sbtSize = shaderGroupHandleSize * pipelineInfo.groupCount;
 
-        BufferData bindingTableBufferData = context.stagingMemoryBufferPools->reserveBufferData(sbtSize, 4, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        auto bindingTableBuffer = bindingTableBufferData.buffer;
-        auto bindingTableMemory = bindingTableBuffer->getDeviceMemory();
+        BufferInfo bindingTableBufferInfo = context.stagingMemoryBufferPools->reserveBuffer(sbtSize, 4, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        auto bindingTableBuffer = bindingTableBufferInfo.buffer;
+        auto bindingTableMemory = bindingTableBuffer->getDeviceMemory(context.deviceID);
 
         void* buffer_data;
-        bindingTableMemory->map(bindingTableBuffer->getMemoryOffset() + bindingTableBufferData.offset, bindingTableBufferData.range, 0, &buffer_data);
+        bindingTableMemory->map(bindingTableBuffer->getMemoryOffset(context.deviceID) + bindingTableBufferInfo.offset, bindingTableBufferInfo.range, 0, &buffer_data);
 
         extensions->vkGetRayTracingShaderGroupHandlesNV(*_device, _pipeline, 0, static_cast<uint32_t>(rayTracingShaderGroups.size()), sbtSize, buffer_data);
 
         bindingTableMemory->unmap();
 
-        VkDeviceSize offset = bindingTableBufferData.offset;
+        VkDeviceSize offset = bindingTableBufferInfo.offset;
 
         for (size_t i = 0; i < rayTracingShaderGroups.size(); ++i)
         {
-            rayTracingShaderGroups[i]->bufferData.buffer = bindingTableBuffer;
-            rayTracingShaderGroups[i]->bufferData.offset = offset;
+            rayTracingShaderGroups[i]->bufferInfo.buffer = bindingTableBuffer;
+            rayTracingShaderGroups[i]->bufferInfo.offset = offset;
 
             offset += shaderGroupHandleSize;
         }
@@ -197,7 +219,7 @@ void BindRayTracingPipeline::write(Output& output) const
 void BindRayTracingPipeline::record(CommandBuffer& commandBuffer) const
 {
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, _pipeline->vk(commandBuffer.deviceID));
-    commandBuffer.setCurrentPipelineLayout(_pipeline->getPipelineLayout()->vk(commandBuffer.deviceID));
+    commandBuffer.setCurrentPipelineLayout(_pipeline->getPipelineLayout());
 }
 
 void BindRayTracingPipeline::compile(Context& context)

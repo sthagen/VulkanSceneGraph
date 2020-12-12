@@ -50,8 +50,10 @@ namespace vsg
     class BindIndexBuffer;
     class BindComputePipeline;
     class BindGraphicsPipeline;
+    class BindRayTracingPipeline;
     class GraphicsPipeline;
     class ComputePipeline;
+    class RayTracingPipeline;
     class Draw;
     class DrawIndexed;
     class ShaderStage;
@@ -66,6 +68,7 @@ namespace vsg
     class ColorBlendState;
     class DynamicState;
     class ResourceHints;
+    class ClearAttachments;
 
     // forward declare ui events classes
     class UIEvent;
@@ -89,8 +92,11 @@ namespace vsg
     class FrameEvent;
 
     // forward declare viewer classes
+    class Camera;
     class CommandGraph;
     class RenderGraph;
+    class View;
+    class Viewer;
 
     // forward declare general classes
     class FrameStamp;
@@ -114,8 +120,11 @@ namespace vsg
         virtual void apply(const doubleValue&);
 
         // Arrays
+        virtual void apply(const byteArray&);
         virtual void apply(const ubyteArray&);
+        virtual void apply(const shortArray&);
         virtual void apply(const ushortArray&);
+        virtual void apply(const intArray&);
         virtual void apply(const uintArray&);
         virtual void apply(const floatArray&);
         virtual void apply(const doubleArray&);
@@ -226,8 +235,10 @@ namespace vsg
         virtual void apply(const BindIndexBuffer&);
         virtual void apply(const BindComputePipeline&);
         virtual void apply(const BindGraphicsPipeline&);
+        virtual void apply(const BindRayTracingPipeline&);
         virtual void apply(const GraphicsPipeline&);
         virtual void apply(const ComputePipeline&);
+        virtual void apply(const RayTracingPipeline&);
         virtual void apply(const GraphicsPipelineState&);
         virtual void apply(const ShaderStage&);
         virtual void apply(const VertexInputState&);
@@ -242,6 +253,7 @@ namespace vsg
         virtual void apply(const ResourceHints&);
         virtual void apply(const Draw&);
         virtual void apply(const DrawIndexed&);
+        virtual void apply(const ClearAttachments&);
 
         // ui events
         virtual void apply(const UIEvent&);
@@ -264,9 +276,12 @@ namespace vsg
         virtual void apply(const TerminateEvent&);
         virtual void apply(const FrameEvent&);
 
-        // viewer class
+        // viewer
+        virtual void apply(const Camera&);
         virtual void apply(const CommandGraph&);
         virtual void apply(const RenderGraph&);
+        virtual void apply(const View&);
+        virtual void apply(const Viewer&);
 
         // general classes
         virtual void apply(const FrameStamp&);

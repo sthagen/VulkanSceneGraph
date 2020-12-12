@@ -22,6 +22,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/state/StateGroup.h>
 #include <vsg/viewer/CommandGraph.h>
 #include <vsg/viewer/RenderGraph.h>
+#include <vsg/viewer/View.h>
 #include <vsg/vk/CommandBuffer.h>
 #include <vsg/vk/RenderPass.h>
 #include <vsg/vk/State.h>
@@ -39,8 +40,7 @@ void CollectDescriptorStats::apply(const Object& object)
 
 bool CollectDescriptorStats::checkForResourceHints(const Object& object)
 {
-    const Object* rh_object = object.getObject("ResourceHints");
-    const ResourceHints* resourceHints = dynamic_cast<const ResourceHints*>(rh_object);
+    auto resourceHints = object.getObject<ResourceHints>("ResourceHints");
     if (resourceHints)
     {
         apply(*resourceHints);
@@ -54,13 +54,13 @@ bool CollectDescriptorStats::checkForResourceHints(const Object& object)
 
 void CollectDescriptorStats::apply(const ResourceHints& resourceHints)
 {
-    if (resourceHints.getMaxSlot() > maxSlot) maxSlot = resourceHints.getMaxSlot();
+    if (resourceHints.maxSlot > maxSlot) maxSlot = resourceHints.maxSlot;
 
-    if (!resourceHints.getDescriptorPoolSizes().empty() || resourceHints.getNumDescriptorSets() > 9)
+    if (!resourceHints.descriptorPoolSizes.empty() || resourceHints.numDescriptorSets > 9)
     {
-        externalNumDescriptorSets += resourceHints.getNumDescriptorSets();
+        externalNumDescriptorSets += resourceHints.numDescriptorSets;
 
-        for (auto& [type, count] : resourceHints.getDescriptorPoolSizes())
+        for (auto& [type, count] : resourceHints.descriptorPoolSizes)
         {
             descriptorTypeMap[type] += count;
         }
@@ -129,7 +129,14 @@ void CollectDescriptorStats::apply(const Descriptor& descriptor)
     {
         descriptors.insert(&descriptor);
     }
-    descriptorTypeMap[descriptor._descriptorType] += descriptor.getNumDescriptors();
+    descriptorTypeMap[descriptor.descriptorType] += descriptor.getNumDescriptors();
+}
+
+void CollectDescriptorStats::apply(const View& view)
+{
+    views.insert(&view);
+
+    view.traverse(*this);
 }
 
 uint32_t CollectDescriptorStats::computeNumDescriptorSets() const
@@ -244,11 +251,7 @@ void CompileTraversal::apply(RenderGraph& renderGraph)
     auto previousDefaultPipelineStates = context.defaultPipelineStates;
     auto previousOverridePipelineStates = context.overridePipelineStates;
 
-    if (renderGraph.camera && renderGraph.camera->getViewportState())
-    {
-        context.defaultPipelineStates.emplace_back(renderGraph.camera->getViewportState());
-    }
-    else if (renderGraph.window)
+    if (renderGraph.window)
     {
         context.defaultPipelineStates.push_back(vsg::ViewportState::create(renderGraph.window->extent2D()));
     }
@@ -269,4 +272,22 @@ void CompileTraversal::apply(RenderGraph& renderGraph)
     // restore previous values
     context.defaultPipelineStates = previousDefaultPipelineStates;
     context.overridePipelineStates = previousOverridePipelineStates;
+}
+
+void CompileTraversal::apply(View& view)
+{
+    context.viewID = view.viewID;
+
+    if (view.camera && view.camera->getViewportState())
+    {
+        context.defaultPipelineStates.emplace_back(view.camera->getViewportState());
+
+        view.traverse(*this);
+
+        context.defaultPipelineStates.pop_back();
+    }
+    else
+    {
+        view.traverse(*this);
+    }
 }

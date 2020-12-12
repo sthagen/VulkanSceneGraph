@@ -62,30 +62,40 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/commands/BindIndexBuffer.h>
 #include <vsg/commands/BindVertexBuffers.h>
 #include <vsg/commands/BlitImage.h>
+#include <vsg/commands/ClearAttachments.h>
 #include <vsg/commands/Command.h>
 #include <vsg/commands/Commands.h>
-#include <vsg/commands/CopyAndReleaseBufferDataCommand.h>
-#include <vsg/commands/CopyAndReleaseImageDataCommand.h>
+#include <vsg/commands/CopyAndReleaseBuffer.h>
+#include <vsg/commands/CopyAndReleaseImage.h>
 #include <vsg/commands/CopyImage.h>
 #include <vsg/commands/CopyImageToBuffer.h>
 #include <vsg/commands/Dispatch.h>
 #include <vsg/commands/Draw.h>
 #include <vsg/commands/DrawIndexed.h>
+#include <vsg/commands/DrawIndexedIndirect.h>
+#include <vsg/commands/DrawIndirect.h>
+#include <vsg/commands/DrawIndirectCommand.h>
 #include <vsg/commands/Event.h>
 #include <vsg/commands/NextSubPass.h>
 #include <vsg/commands/PipelineBarrier.h>
 #include <vsg/commands/PushConstants.h>
 
 // State header files
+#include <vsg/state/Buffer.h>
+#include <vsg/state/BufferInfo.h>
+#include <vsg/state/BufferView.h>
 #include <vsg/state/ComputePipeline.h>
 #include <vsg/state/Descriptor.h>
 #include <vsg/state/DescriptorBuffer.h>
 #include <vsg/state/DescriptorImage.h>
-#include <vsg/state/DescriptorImageView.h>
 #include <vsg/state/DescriptorSet.h>
 #include <vsg/state/DescriptorSetLayout.h>
 #include <vsg/state/DescriptorTexelBufferView.h>
 #include <vsg/state/GraphicsPipeline.h>
+#include <vsg/state/GraphicsPipelineStates.h>
+#include <vsg/state/Image.h>
+#include <vsg/state/ImageInfo.h>
+#include <vsg/state/ImageView.h>
 #include <vsg/state/PipelineLayout.h>
 #include <vsg/state/ResourceHints.h>
 #include <vsg/state/Sampler.h>
@@ -136,16 +146,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/viewer/RecordAndSubmitTask.h>
 #include <vsg/viewer/RenderGraph.h>
 #include <vsg/viewer/Trackball.h>
+#include <vsg/viewer/View.h>
 #include <vsg/viewer/ViewMatrix.h>
 #include <vsg/viewer/Viewer.h>
 #include <vsg/viewer/Window.h>
+#include <vsg/viewer/WindowResizeHandler.h>
 #include <vsg/viewer/WindowTraits.h>
 
 // Vulkan related header files
 #include <vsg/vk/AllocationCallbacks.h>
-#include <vsg/vk/Buffer.h>
-#include <vsg/vk/BufferData.h>
-#include <vsg/vk/BufferView.h>
 #include <vsg/vk/CommandBuffer.h>
 #include <vsg/vk/CommandPool.h>
 #include <vsg/vk/Context.h>
@@ -155,15 +164,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/vk/Extensions.h>
 #include <vsg/vk/Fence.h>
 #include <vsg/vk/Framebuffer.h>
-#include <vsg/vk/Image.h>
-#include <vsg/vk/ImageData.h>
-#include <vsg/vk/ImageView.h>
 #include <vsg/vk/Instance.h>
 #include <vsg/vk/MemoryBufferPools.h>
 #include <vsg/vk/PhysicalDevice.h>
 #include <vsg/vk/Queue.h>
 #include <vsg/vk/RenderPass.h>
 #include <vsg/vk/Semaphore.h>
+#include <vsg/vk/ShaderCompiler.h>
 #include <vsg/vk/State.h>
 #include <vsg/vk/SubmitCommands.h>
 #include <vsg/vk/Surface.h>
@@ -193,6 +200,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 // Introspection header files
 #include <vsg/introspection/c_interface.h>
+
+// Text header files
+#include <vsg/text/CpuLayoutTechnique.h>
+#include <vsg/text/Font.h>
+#include <vsg/text/GlyphMetrics.h>
+#include <vsg/text/GpuLayoutTechnique.h>
+#include <vsg/text/StandardLayout.h>
+#include <vsg/text/Text.h>
+#include <vsg/text/TextLayout.h>
+#include <vsg/text/TextTechnique.h>
 
 // Raytracing header files
 #include <vsg/raytracing/AccelerationGeometry.h>

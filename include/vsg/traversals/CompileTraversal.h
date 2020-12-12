@@ -14,10 +14,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/core/Object.h>
 #include <vsg/nodes/Group.h>
+#include <vsg/state/BufferInfo.h>
 #include <vsg/state/Descriptor.h>
 #include <vsg/state/ResourceHints.h>
 #include <vsg/viewer/Window.h>
-#include <vsg/vk/BufferData.h>
 #include <vsg/vk/CommandPool.h>
 #include <vsg/vk/Context.h>
 #include <vsg/vk/DescriptorPool.h>
@@ -28,12 +28,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsg
 {
-    class CollectDescriptorStats : public Inherit<ConstVisitor, CollectDescriptorStats>
+    class VSG_DECLSPEC CollectDescriptorStats : public Inherit<ConstVisitor, CollectDescriptorStats>
     {
     public:
         using Descriptors = std::set<const Descriptor*>;
         using DescriptorSets = std::set<const DescriptorSet*>;
         using DescriptorTypeMap = std::map<VkDescriptorType, uint32_t>;
+        using Views = std::set<const View*>;
 
         using ConstVisitor::apply;
 
@@ -47,6 +48,7 @@ namespace vsg
         void apply(const DescriptorSet& descriptorSet) override;
         void apply(const Descriptor& descriptor) override;
         void apply(const PagedLOD& plod) override;
+        void apply(const View& view) override;
 
         uint32_t computeNumDescriptorSets() const;
 
@@ -55,6 +57,8 @@ namespace vsg
         Descriptors descriptors;
         DescriptorSets descriptorSets;
         DescriptorTypeMap descriptorTypeMap;
+        Views views;
+
         uint32_t maxSlot = 0;
         uint32_t externalNumDescriptorSets = 0;
         bool containsPagedLOD = false;
@@ -79,6 +83,7 @@ namespace vsg
         void apply(Geometry& geometry) override;
         void apply(CommandGraph& commandGraph) override;
         void apply(RenderGraph& renderGraph) override;
+        void apply(View& view) override;
 
         void compile(Object* object);
 

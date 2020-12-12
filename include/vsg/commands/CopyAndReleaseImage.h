@@ -18,12 +18,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/Object.h>
 #include <vsg/core/ScratchMemory.h>
 #include <vsg/nodes/Group.h>
+#include <vsg/state/BufferInfo.h>
+#include <vsg/state/DescriptorImage.h>
 #include <vsg/state/GraphicsPipeline.h>
-#include <vsg/vk/BufferData.h>
 #include <vsg/vk/CommandPool.h>
 #include <vsg/vk/DescriptorPool.h>
 #include <vsg/vk/Fence.h>
-#include <vsg/vk/ImageData.h>
 #include <vsg/vk/MemoryBufferPools.h>
 
 #include <vsg/commands/Command.h>
@@ -31,25 +31,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace vsg
 {
 
-    class VSG_DECLSPEC CopyAndReleaseImageDataCommand : public Inherit<Command, CopyAndReleaseImageDataCommand>
+    class VSG_DECLSPEC CopyAndReleaseImage : public Inherit<Command, CopyAndReleaseImage>
     {
     public:
-        CopyAndReleaseImageDataCommand() {}
-        CopyAndReleaseImageDataCommand(BufferData src, ImageData dest);
-        CopyAndReleaseImageDataCommand(BufferData src, ImageData dest, uint32_t numMipMapLevels);
+        CopyAndReleaseImage() {}
+        CopyAndReleaseImage(BufferInfo src, ImageInfo dest);
+        CopyAndReleaseImage(BufferInfo src, ImageInfo dest, uint32_t numMipMapLevels);
 
-        void add(BufferData src, ImageData dest);
-        void add(BufferData src, ImageData dest, uint32_t numMipMapLevels);
+        void add(BufferInfo src, ImageInfo dest);
+        void add(BufferInfo src, ImageInfo dest, uint32_t numMipMapLevels);
 
         void record(CommandBuffer& commandBuffer) const override;
 
     protected:
-        virtual ~CopyAndReleaseImageDataCommand();
+        virtual ~CopyAndReleaseImage();
 
         struct CopyData
         {
-            BufferData source;
-            ImageData destination;
+            BufferInfo source;
+            ImageInfo destination;
             uint32_t mipLevels = 1;
 
             void record(CommandBuffer& commandBuffer) const;

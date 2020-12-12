@@ -70,11 +70,23 @@ void ConstVisitor::apply(const doubleValue& value)
 //
 // Arrays
 //
+void ConstVisitor::apply(const byteArray& value)
+{
+    apply(static_cast<const Data&>(value));
+}
 void ConstVisitor::apply(const ubyteArray& value)
 {
     apply(static_cast<const Data&>(value));
 }
+void ConstVisitor::apply(const shortArray& value)
+{
+    apply(static_cast<const Data&>(value));
+}
 void ConstVisitor::apply(const ushortArray& value)
+{
+    apply(static_cast<const Data&>(value));
+}
+void ConstVisitor::apply(const intArray& value)
 {
     apply(static_cast<const Data&>(value));
 }
@@ -506,11 +518,19 @@ void ConstVisitor::apply(const BindGraphicsPipeline& value)
 {
     apply(static_cast<const StateCommand&>(value));
 }
+void ConstVisitor::apply(const BindRayTracingPipeline& value)
+{
+    apply(static_cast<const StateCommand&>(value));
+}
 void ConstVisitor::apply(const GraphicsPipeline& value)
 {
     apply(static_cast<const Object&>(value));
 }
 void ConstVisitor::apply(const ComputePipeline& value)
+{
+    apply(static_cast<const Object&>(value));
+}
+void ConstVisitor::apply(const RayTracingPipeline& value)
 {
     apply(static_cast<const Object&>(value));
 }
@@ -567,6 +587,10 @@ void ConstVisitor::apply(const Draw& value)
     apply(static_cast<const Command&>(value));
 }
 void ConstVisitor::apply(const DrawIndexed& value)
+{
+    apply(static_cast<const Command&>(value));
+}
+void ConstVisitor::apply(const ClearAttachments& value)
 {
     apply(static_cast<const Command&>(value));
 }
@@ -656,6 +680,10 @@ void ConstVisitor::apply(const FrameEvent& event)
 //
 // Viewer classes
 //
+void ConstVisitor::apply(const Camera& camera)
+{
+    apply(static_cast<const Object&>(camera));
+}
 void ConstVisitor::apply(const CommandGraph& cg)
 {
     apply(static_cast<const Group&>(cg));
@@ -663,6 +691,14 @@ void ConstVisitor::apply(const CommandGraph& cg)
 void ConstVisitor::apply(const RenderGraph& rg)
 {
     apply(static_cast<const Group&>(rg));
+}
+void ConstVisitor::apply(const View& view)
+{
+    apply(static_cast<const Group&>(view));
+}
+void ConstVisitor::apply(const Viewer& viewer)
+{
+    apply(static_cast<const Object&>(viewer));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

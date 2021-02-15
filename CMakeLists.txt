@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(VSG
-    VERSION 0.0.3
+    VERSION 0.0.4
     DESCRIPTION "VulkanSceneGraph library"
     LANGUAGES CXX
 )
@@ -141,7 +141,7 @@ endif()
 find_program(CLANGFORMAT clang-format)
 if (CLANGFORMAT)
     add_custom_target(clang-format
-        COMMAND ${CLANGFORMAT} -i ${PATH_TO_SOURCE}include/vsg/*/*.h ${PATH_TO_SOURCE}src/vsg/*/*.cpp
+        COMMAND ${CLANGFORMAT} -i ${CMAKE_SOURCE_DIR}/include/vsg/*/*.h ${CMAKE_SOURCE_DIR}/src/vsg/*/*.cpp
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Automated code format using clang-format"
     )

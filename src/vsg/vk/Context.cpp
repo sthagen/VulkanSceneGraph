@@ -124,9 +124,9 @@ ShaderCompiler* Context::getOrCreateShaderCompiler()
     return shaderCompiler;
 }
 
-void Context::record()
+bool Context::record()
 {
-    if (commands.empty() && buildAccelerationStructureCommands.empty()) return;
+    if (commands.empty() && buildAccelerationStructureCommands.empty()) return false;
 
     //auto before_compile = std::chrono::steady_clock::now();
 
@@ -152,7 +152,7 @@ void Context::record()
         for (auto& command : commands) command->record(*commandBuffer);
     }
 
-    // create scratch buffer and issue build acceleration sctructure commands
+    // create scratch buffer and issue build acceleration structure commands
     ref_ptr<Buffer> scratchBuffer;
     ref_ptr<DeviceMemory> scratchBufferMemory;
     if (scratchBufferSize > 0)
@@ -187,6 +187,8 @@ void Context::record()
     }
 
     graphicsQueue->submit(submitInfo, fence);
+
+    return true;
 }
 
 void Context::waitForCompletion()

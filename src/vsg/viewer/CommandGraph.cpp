@@ -38,7 +38,7 @@ CommandGraph::CommandGraph(Window* in_window) :
 
     for (size_t i = 0; i < window->numFrames(); ++i)
     {
-        ref_ptr<CommandPool> cp = CommandPool::create(device, queueFamily);
+        ref_ptr<CommandPool> cp = CommandPool::create(device, queueFamily, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         _commandBuffers.emplace_back(CommandBuffer::create(device, cp, level));
     }
 }
@@ -112,7 +112,7 @@ void CommandGraph::record(CommandBuffers& recordedCommandBuffers, ref_ptr<FrameS
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     if (level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
     {
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 
         inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
         inheritanceInfo.pNext = nullptr;
@@ -132,7 +132,7 @@ void CommandGraph::record(CommandBuffers& recordedCommandBuffers, ref_ptr<FrameS
     }
     else
     {
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         beginInfo.pInheritanceInfo = nullptr;
     }
 
@@ -153,7 +153,7 @@ void CommandGraph::record(CommandBuffers& recordedCommandBuffers, ref_ptr<FrameS
 
     if (level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
     {
-        // pass oon this command buffer to conencted ExecuteCommands nodes
+        // pass on this command buffer to connected ExecuteCommands nodes
         for (auto& ec : _executeCommands)
         {
             ec->completed(commandBuffer);

@@ -64,7 +64,7 @@ namespace vsg
 
         uint32_t viewID = 0;
 
-        // get exisitng ShaderCompile or create a new one when GLSLang is supported
+        // get existing ShaderCompile or create a new one when GLSLang is supported
         ShaderCompiler* getOrCreateShaderCompiler();
 
         ref_ptr<CommandBuffer> getOrCreateCommandBuffer();
@@ -100,7 +100,9 @@ namespace vsg
 
         std::vector<ref_ptr<Command>> commands;
 
-        void record();
+        /// return true if there are commands that have been submitted
+        bool record();
+
         void waitForCompletion();
 
         ref_ptr<MemoryBufferPools> deviceMemoryBufferPools;

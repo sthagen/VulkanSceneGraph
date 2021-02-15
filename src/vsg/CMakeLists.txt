@@ -134,6 +134,18 @@ set(SOURCES
     raytracing/TopLevelAccelerationStructure.cpp
     raytracing/TraceRays.cpp
 
+    ui/UIEvent.cpp
+    ui/ApplicationEvent.cpp
+    ui/KeyEvent.cpp
+    ui/TouchEvent.cpp
+    ui/PointerEvent.cpp
+    ui/ScrollWheelEvent.cpp
+    ui/WindowEvent.cpp
+    ui/RecordEvents.cpp
+    ui/CollectEvents.cpp
+    ui/ShiftEventTime.cpp
+    ui/PlayEvents.cpp
+    ui/PrintEvents.cpp
 
     vk/CommandBuffer.cpp
     vk/CommandPool.cpp
@@ -246,11 +258,17 @@ if(MSVC)
     endmacro()
 
     SET_OUTPUT_DIR_PROPERTY(vsg "")
-	
+
     option(ENABLE_MP_FLAG "Turning on this option will add the multi-processor flag in MSVC for VSG and it's included projects" ON)
-	
+
     if(ENABLE_MP_FLAG)
         target_compile_options(vsg PRIVATE "/MP")
+    endif()
+
+    option(DISABLE_CHECKED_ITERATORS "Turning on this option will disable checked iterators in debug mode for visual studio. All imported projects must adhere to this requirement" OFF)
+
+    if(DISABLE_CHECKED_ITERATORS)
+        target_compile_definitions(vsg PUBLIC "_ITERATOR_DEBUG_LEVEL=0")
     endif()
 
 endif()

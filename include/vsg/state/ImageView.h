@@ -18,10 +18,13 @@ namespace vsg
 {
     class Context;
 
+    extern VSG_DECLSPEC VkImageAspectFlags computeAspectFlagsForFormat(VkFormat format);
+
     class VSG_DECLSPEC ImageView : public Inherit<Object, ImageView>
     {
     public:
-        ImageView(ref_ptr<Image> in_image = {}, VkImageAspectFlags aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT);
+        ImageView(ref_ptr<Image> in_image = {});
+        ImageView(ref_ptr<Image> in_image, VkImageAspectFlags aspectFlags);
 
         /// VkImageViewCreateInfo settings
         VkImageViewCreateFlags flags = 0;
@@ -55,10 +58,10 @@ namespace vsg
 
     using ImageViews = std::vector<ref_ptr<ImageView>>;
 
-    /// convinience function that create an ImageView and allocates device memory and an Image for it. For device memory allocattion the Context's DeviceMemoryPools are utilized.
+    /// convenience function that create an ImageView and allocates device memory and an Image for it. For device memory allocation the Context's DeviceMemoryPools are utilized.
     extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Context& context, ref_ptr<Image> image, VkImageAspectFlags aspectFlags);
 
-    /// convinience function that create an ImageView and allocates device memory and an Image for it.
+    /// convenience function that create an ImageView and allocates device memory and an Image for it.
     extern VSG_DECLSPEC ref_ptr<ImageView> createImageView(Device* device, ref_ptr<Image> image, VkImageAspectFlags aspectFlags);
 
 } // namespace vsg
